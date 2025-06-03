@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP自動生成ツール - デザイナー向け</title>
+    <meta name="description" content="クライアント資料からAIが自動でランディングページを生成。デザイナーの作業を80%効率化">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- メインワークスペース -->
+    <div id="app" class="workspace">
+        <!-- ヘッダー -->
+        <header class="app-header">
+            <h1>LP自動生成ツール</h1>
+        </header>
+
+        <!-- Step 1: ファイルアップロード -->
+        <section class="upload-section" id="uploadSection">
+            <div class="section-header">
+                <h2>Step 1: クライアント資料をアップロード</h2>
+                <p>PDF、Word、Excel、PowerPoint、画像ファイルに対応</p>
+            </div>
+            
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-content">
+                    <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                    </svg>
+                    <h3>クライアント資料をドロップ</h3>
+                    <p>PDF, Word, Excel, PowerPoint, 画像に対応</p>
+                    <button class="btn-primary" onclick="document.getElementById('fileInput').click()">
+                        ファイルを選択
+                    </button>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.jpg,.jpeg,.png,.txt" style="display: none;">
+                </div>
+                <div class="drop-zone-overlay" id="dropOverlay">
+                    <div class="drop-message">ファイルをドロップしてください</div>
+                </div>
+            </div>
+            
+            <div class="file-list" id="fileList"></div>
+            
+        </section>
+
+
+        <!-- API Configuration Section -->
+        <section class="api-config-section" id="apiConfigSection">
+            <div class="section-header">
+                <h2>🔑 API設定</h2>
+                <p>Grok APIキーを入力してください（セキュリティのため一時保存のみ）</p>
+            </div>
+            
+            <div class="api-config-card">
+                <div class="api-status" id="apiStatus">
+                    <div class="status-indicator" id="statusIndicator">⚠️</div>
+                    <div class="status-text" id="statusText">APIキーが設定されていません</div>
+                </div>
+                
+                <div class="api-key-setup">
+                    <label for="grokApiKeyInput">Grok API Key:</label>
+                    <div class="api-key-input-group">
+                        <input type="password" id="grokApiKeyInput" class="api-key-input" style="width: 100%;">
+                    </div>
+                    <small>モデル: grok-3-latest | エンドポイント: https://api.x.ai/v1/chat/completions<br>
+                    ⚠️ セキュリティのため、APIキーはページリロード時に消去されます</small>
+                </div>
+                
+                <div class="api-actions">
+                    <button class="btn-secondary" onclick="saveApiKey()">💾 一時保存</button>
+                </div>
+                
+                <div id="testResult" class="test-result" style="display: none;"></div>
+                
+                <!-- AI Model Selector (moved here) -->
+                <div class="model-selector-subsection" id="modelSelectorSection" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                    <div class="section-header">
+                        <h3>🤖 AIモデル選択</h3>
+                        <p>使用するAIサービスを選択してください</p>
+                    </div>
+                    
+                    <div class="model-selector-grid">
+                        <div class="model-card" id="grokCard" onclick="selectAIModel('grok')">
+                            <div class="model-icon">🚀</div>
+                            <h3>Grok</h3>
+                            <div class="model-status" id="grokStatus">
+                                <span class="status-indicator"></span>
+                                <span class="status-text">確認中...</span>
+                            </div>
+                            <p class="model-description">X.AI製・最新トレンド対応 (grok-3-latest)</p>
+                            <div class="model-features">
+                                <span class="feature">✓ 最新</span>
+                                <span class="feature">✓ トレンド</span>
+                                <span class="feature">✓ 高品質</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="selected-model-info" id="selectedModelInfo" style="display: none;">
+                        <p>選択中のモデル: <strong id="selectedModelName">-</strong></p>
+                        <button class="btn-secondary" onclick="changeAIModel()">モデルを変更</button>
+                    </div>
+                </div>
+            </div>
+            
+            
+        </section>
+
+        <!-- Copywriter Style & Sample Prompts Selection -->
+        <section class="prompt-selection-section" id="promptSelectionSection">
+            <div class="section-header">
+                <h2>📝 コピーライタースタイル選択</h2>
+                <p>著名コピーライターのスタイルを選択してLP生成をお試しください</p>
+            </div>
+
+            <!-- Copywriter Style Selection -->
+            <div class="copywriter-selection">
+                <h3>🎨 コピーライタースタイル選択</h3>
+                <div class="copywriter-grid">
+                    <div class="copywriter-card selected" data-style="dan-kennedy" onclick="selectCopywriterStyle(this)">
+                        <div class="copywriter-icon">🔥</div>
+                        <h4>ダン・ケネディ</h4>
+                        <p class="copywriter-description">直接反応マーケティングの父、急情性と心理トリガーを使ったコピー</p>
+                        <div class="copywriter-features">
+                            <span class="feature">緊急性</span>
+                            <span class="feature">恐怖訴求</span>
+                            <span class="feature">心理トリガー</span>
+                        </div>
+                    </div>
+                    <div class="copywriter-card" data-style="gary-halbert" onclick="selectCopywriterStyle(this)">
+                        <div class="copywriter-icon">🎯</div>
+                        <h4>ゲイリー・ハルバート</h4>
+                        <p class="copywriter-description">ストーリーテリングと感情に訴えるコピーで有名</p>
+                        <div class="copywriter-features">
+                            <span class="feature">ストーリー</span>
+                            <span class="feature">感情訴求</span>
+                            <span class="feature">結果実証</span>
+                        </div>
+                    </div>
+                    <div class="copywriter-card" data-style="john-carlton" onclick="selectCopywriterStyle(this)">
+                        <div class="copywriter-icon">⚡</div>
+                        <h4>ジョン・カールトン</h4>
+                        <p class="copywriter-description">挑発的で印象に残る強力なコピー</p>
+                        <div class="copywriter-features">
+                            <span class="feature">挑発的</span>
+                            <span class="feature">直接的</span>
+                            <span class="feature">インパクト</span>
+                        </div>
+                    </div>
+                    <div class="copywriter-card" data-style="eugene-schwartz" onclick="selectCopywriterStyle(this)">
+                        <div class="copywriter-icon">🧠</div>
+                        <h4>ユージーン・シュワルツ</h4>
+                        <p class="copywriter-description">心理学的洞察と深い理解に基づいたコピー</p>
+                        <div class="copywriter-features">
+                            <span class="feature">心理学</span>
+                            <span class="feature">深い洞察</span>
+                            <span class="feature">理論的</span>
+                        </div>
+                    </div>
+                    <div class="copywriter-card" data-style="david-ogilvy" onclick="selectCopywriterStyle(this)">
+                        <div class="copywriter-icon">🎩</div>
+                        <h4>デイビッド・オグルビー</h4>
+                        <p class="copywriter-description">ブランドと品質を重視したエレガントなコピー</p>
+                        <div class="copywriter-features">
+                            <span class="feature">ブランド重視</span>
+                            <span class="feature">エレガント</span>
+                            <span class="feature">信頼性</span>
+                        </div>
+                    </div>
+                    <div class="copywriter-card" data-style="claude-hopkins" onclick="selectCopywriterStyle(this)">
+                        <div class="copywriter-icon">📈</div>
+                        <h4>クロード・ホプキンス</h4>
+                        <p class="copywriter-description">科学的広告の先駆者、テストとデータを重視</p>
+                        <div class="copywriter-features">
+                            <span class="feature">科学的</span>
+                            <span class="feature">データ重視</span>
+                            <span class="feature">A/Bテスト</span>
+                        </div>
+                    </div>
+                    <div class="copywriter-card" data-style="robert-collier" onclick="selectCopywriterStyle(this)">
+                        <div class="copywriter-icon">💌</div>
+                        <h4>ロバート・コリアー</h4>
+                        <p class="copywriter-description">読者の心に寄り添う共感型コピー</p>
+                        <div class="copywriter-features">
+                            <span class="feature">共感重視</span>
+                            <span class="feature">対話形式</span>
+                            <span class="feature">親しみやすさ</span>
+                        </div>
+                    </div>
+                    <div class="copywriter-card" data-style="joe-sugarman" onclick="selectCopywriterStyle(this)">
+                        <div class="copywriter-icon">🎓</div>
+                        <h4>ジョー・シュガーマン</h4>
+                        <p class="copywriter-description">教育的アプローチで信頼を築く</p>
+                        <div class="copywriter-features">
+                            <span class="feature">教育的</span>
+                            <span class="feature">論理的</span>
+                            <span class="feature">詳細説明</span>
+                        </div>
+                    </div>
+                    <div class="copywriter-card" data-style="haruki-murakami" onclick="selectCopywriterStyle(this)">
+                        <div class="copywriter-icon">🌙</div>
+                        <h4>村上春樹風</h4>
+                        <p class="copywriter-description">文学的で洗練された静かな訴求</p>
+                        <div class="copywriter-features">
+                            <span class="feature">文学的</span>
+                            <span class="feature">内省的</span>
+                            <span class="feature">余白の美</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="prompt-actions" style="margin-top: 2rem; text-align: center;">
+                <button class="btn-secondary" onclick="selectAllCopywriters()">✅ 全員選択</button>
+                <button class="btn-secondary" onclick="resetPromptSelection()">🔄 選択をリセット</button>
+                <button class="btn-primary" onclick="compareAllIntros()" style="background-color: #059669;">📊 9人全員の冒頭を比較</button>
+                <button class="btn-primary" onclick="generateWithSelectedPrompts()" id="generateWithPromptsButton">🚀 選択したスタイルで生成</button>
+            </div>
+            
+        </section>
+
+        <!-- Step 2: 参考LP選択 -->
+        <section class="reference-section" id="referenceSection" style="display: none;">
+            <div class="section-header">
+                <h2>Step 2: LP要素テンプレート選択</h2>
+                <p>30種類のLP要素から、お客様のビジネスに最適なテンプレートを選択してください</p>
+            </div>
+            
+            <div class="filter-bar">
+                <select id="categoryFilter" onchange="filterReferences()">
+                    <option value="">すべてのテンプレート</option>
+                    <option value="hero">ヒーローセクション</option>
+                    <option value="problem">課題提示</option>
+                    <option value="solution">解決策提示</option>
+                    <option value="benefits">ベネフィット</option>
+                    <option value="features">機能説明</option>
+                    <option value="testimonials">お客様の声</option>
+                    <option value="pricing">料金プラン</option>
+                    <option value="faq">よくある質問</option>
+                    <option value="trust">信頼性訴求</option>
+                    <option value="cta">CTA（行動喚起）</option>
+                </select>
+                <select id="cvrFilter" onchange="filterReferences()">
+                    <option value="">期待CVRで絞り込み</option>
+                    <option value="high">高CVR (15%以上)</option>
+                    <option value="medium">中CVR (10-15%)</option>
+                    <option value="low">標準CVR (10%未満)</option>
+                </select>
+            </div>
+            
+            <div class="reference-stats">
+                <p id="referenceResultCount" style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                    30種類のLP要素テンプレートを表示中
+                </p>
+            </div>
+            
+            <div class="reference-grid" id="referenceGrid">
+                <!-- 参考LPがここに動的に表示される -->
+            </div>
+            
+            <div class="section-actions">
+                <button class="btn-secondary" onclick="goBackToAnalysis()">← 分析結果に戻る</button>
+                <div style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">
+                    💡 カードにホバーして「🚀 このLPを参考に生成」をクリックしてください
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 3: 生成中 -->
+        <section class="generating-section" id="generatingSection" style="display: none;">
+            <div class="generation-container">
+                <div class="loader">
+                    <div class="spinner"></div>
+                    <h3>AI LP生成中...</h3>
+                    <p id="generationStatus">AI分析を開始しています</p>
+                    <div class="progress-bar">
+                        <div class="progress" id="progress" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progressPercent">0%</span>
+                    </div>
+                </div>
+                <div class="generation-steps">
+                    <div class="step" id="step1">
+                        <div class="step-icon">📊</div>
+                        <div class="step-text">構成分析</div>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-icon">✍️</div>
+                        <div class="step-text">コピーライティング</div>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-icon">🎨</div>
+                        <div class="step-text">デザイン生成</div>
+                    </div>
+                    <div class="step" id="step4">
+                        <div class="step-icon">📱</div>
+                        <div class="step-text">レスポンシブ最適化</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 4: 結果表示 -->
+        <section class="result-section" id="resultSection" style="display: none;">
+            <div class="section-header">
+                <h2>🎉 LP生成完了</h2>
+                <p>プレビュー確認後、ダウンロードしてください</p>
+            </div>
+            
+            <!-- AI使用状況 -->
+            <div class="ai-usage-summary" id="aiUsageSummary">
+                <h3>🤖 AI使用状況</h3>
+                <div class="usage-summary-content" id="usageSummaryContent">
+                    <!-- ここに使用状況が表示される -->
+                </div>
+            </div>
+            
+            <div class="result-tabs">
+                <button class="tab active" onclick="showTab('preview')">👀 プレビュー</button>
+                <button class="tab" onclick="showTab('code')">💻 コード</button>
+                <button class="tab" onclick="showTab('proposal')">📋 提案資料</button>
+                <button class="tab" onclick="showTab('analytics')">📈 予測分析</button>
+            </div>
+            
+            <!-- プレビュータブ -->
+            <div class="tab-content active" id="previewTab">
+                <div class="preview-controls">
+                    <div class="device-controls">
+                        <button class="device-btn active" onclick="setDevice('desktop')" data-device="desktop">🖥️ デスクトップ</button>
+                        <button class="device-btn" onclick="setDevice('tablet')" data-device="tablet">📱 タブレット</button>
+                        <button class="device-btn" onclick="setDevice('mobile')" data-device="mobile">📱 モバイル</button>
+                    </div>
+                    <div class="preview-actions">
+                        <button class="btn-icon" onclick="refreshPreview()" title="リフレッシュ">🔄</button>
+                        <button class="btn-icon" onclick="openPreviewInNewTab()" title="新しいタブで開く">🔗</button>
+                    </div>
+                </div>
+                <div class="preview-container">
+                    <iframe id="previewFrame" class="preview-frame desktop"></iframe>
+                </div>
+            </div>
+            
+            <!-- コードタブ -->
+            <div class="tab-content" id="codeTab" style="display: none;">
+                <div class="code-sections">
+                    <div class="code-section">
+                        <div class="code-header">
+                            <h4>HTML</h4>
+                            <button class="btn-copy" onclick="copyCode('html')">📋 コピー</button>
+                        </div>
+                        <textarea id="htmlCode" readonly></textarea>
+                    </div>
+                    <div class="code-section">
+                        <div class="code-header">
+                            <h4>CSS</h4>
+                            <button class="btn-copy" onclick="copyCode('css')">📋 コピー</button>
+                        </div>
+                        <textarea id="cssCode" readonly></textarea>
+                    </div>
+                    <div class="code-section">
+                        <div class="code-header">
+                            <h4>JavaScript</h4>
+                            <button class="btn-copy" onclick="copyCode('js')">📋 コピー</button>
+                        </div>
+                        <textarea id="jsCode" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 提案資料タブ -->
+            <div class="tab-content" id="proposalTab" style="display: none;">
+                <div class="proposal-preview">
+                    <h4>📋 クライアント提案用資料</h4>
+                    <div id="proposalContent" class="proposal-content"></div>
+                    <button class="btn-secondary" onclick="downloadProposal()">📥 提案資料をダウンロード</button>
+                </div>
+            </div>
+            
+            <!-- 予測分析タブ -->
+            <div class="tab-content" id="analyticsTab" style="display: none;">
+                <div class="analytics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="cvrPrediction">-</div>
+                        <div class="metric-label">予想CVR</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="speedScore">-</div>
+                        <div class="metric-label">表示速度スコア</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="seoScore">-</div>
+                        <div class="metric-label">SEOスコア</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="accessibilityScore">-</div>
+                        <div class="metric-label">アクセシビリティ</div>
+                    </div>
+                </div>
+                <div class="improvement-suggestions" id="improvementSuggestions"></div>
+            </div>
+
+            <!-- アクションボタン -->
+            <div class="action-buttons">
+                <button class="btn-primary large" onclick="downloadAll()">📦 全てダウンロード</button>
+            </div>
+
+            <!-- LP改善チャットセクション -->
+            <div class="lp-improvement-section" id="lpImprovementSection">
+                <div class="section-header">
+                    <h3>🤖 AIとチャットしてLPを改善</h3>
+                    <p>Grok3と会話しながらランディングページをさらに最適化できます</p>
+                </div>
+
+                <!-- 改善依頼フォーム -->
+                <div class="improvement-form">
+                    <div class="form-group">
+                        <label for="improvementRequest">改善を依頼する:</label>
+                        <textarea id="improvementRequest" class="improvement-textarea" placeholder="例：ペルソナを30代女性に変更して、より感情的なコピーにしてください" rows="4"></textarea>
+                    </div>
+
+                    <!-- 追加資料添付 -->
+                    <div class="form-group">
+                        <label for="additionalFiles">追加資料を添付:</label>
+                        <div class="additional-files-area">
+                            <input type="file" id="additionalFiles" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.jpg,.jpeg,.png,.txt" style="display: none;">
+                            <div class="drop-zone-small" onclick="document.getElementById('additionalFiles').click()">
+                                <span>📎 追加資料をドロップまたはクリック</span>
+                            </div>
+                            <div class="additional-files-list" id="additionalFilesList"></div>
+                        </div>
+                    </div>
+
+                    <!-- 送信ボタンを削除し、最下部に移動 -->
+                </div>
+
+                <!-- サンプルプロンプト -->
+                <div class="sample-prompts">
+                    <h4>💡 サンプルプロンプト（複数選択可能・クリックで追加）:</h4>
+                    <div class="prompt-controls">
+                        <button class="btn-secondary" onclick="clearSelectedPrompts()">🗑️ 選択をクリア</button>
+                        <button class="btn-secondary" onclick="showSelectedPrompts()">📝 選択中のプロンプトを確認</button>
+                    </div>
+                    
+                    <!-- 文体変更カテゴリ -->
+                    <div class="prompt-category">
+                        <h5>📝 文体・トーン変更</h5>
+                        <div class="prompt-grid">
+                            <button class="prompt-btn" data-prompt="関西弁の親しみやすい文体に変更して、もっとフレンドリーで話しかけやすい雰囲気にしてください" onclick="togglePrompt(this)">
+                                関西弁で親しみやすく
+                            </button>
+                            <button class="prompt-btn" data-prompt="敬語を多用したより丁寧で上品な文体に変更してください" onclick="togglePrompt(this)">
+                                丁寧で上品な敬語に
+                            </button>
+                            <button class="prompt-btn" data-prompt="若者言葉やカジュアルな表現を使って、20代向けの親近感のある文体に変更してください" onclick="togglePrompt(this)">
+                                若者向けカジュアルに
+                            </button>
+                            <button class="prompt-btn" data-prompt="専門用語を使った権威性のある、エキスパート向けの文体に変更してください" onclick="togglePrompt(this)">
+                                専門性・権威性重視に
+                            </button>
+                            <button class="prompt-btn" data-prompt="優しく温かみのある、ママ友に話すような親しみやすい文体に変更してください" onclick="togglePrompt(this)">
+                                ママ友トークのように
+                            </button>
+                            <button class="prompt-btn" data-prompt="ビジネスライクで簡潔、効率重視の文体に変更してください" onclick="togglePrompt(this)">
+                                ビジネスライクに
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ペルソナ・ターゲット変更カテゴリ -->
+                    <div class="prompt-category">
+                        <h5>👥 ペルソナ・ターゲット変更</h5>
+                        <div class="prompt-grid">
+                            <button class="prompt-btn" data-prompt="ペルソナを30代女性の働くママに変更して、時短や効率性を重視したコピーに修正してください" onclick="togglePrompt(this)">
+                                30代働くママ向けに
+                            </button>
+                            <button class="prompt-btn" data-prompt="ペルソナを50代以上のシニア層に変更して、安心感と信頼性を重視したコピーに修正してください" onclick="togglePrompt(this)">
+                                シニア層向けに
+                            </button>
+                            <button class="prompt-btn" data-prompt="ペルソナを起業家・経営者に変更して、ROIや効率性を重視したビジネス向けコピーに修正してください" onclick="togglePrompt(this)">
+                                起業家・経営者向けに
+                            </button>
+                            <button class="prompt-btn" data-prompt="ペルソナを学生・新社会人に変更して、コストパフォーマンスと成長を重視したコピーに修正してください" onclick="togglePrompt(this)">
+                                学生・新社会人向けに
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 心理訴求・緊急性カテゴリ -->
+                    <div class="prompt-category">
+                        <h5>⚡ 心理訴求・緊急性</h5>
+                        <div class="prompt-grid">
+                            <button class="prompt-btn" data-prompt="もっと緊急性を強調して、今すぐ行動したくなるようなコピーに変更してください" onclick="togglePrompt(this)">
+                                緊急性を強調
+                            </button>
+                            <button class="prompt-btn" data-prompt="FOMO（見逃し恐怖）を活用して、今しか手に入らない特別感を演出してください" onclick="togglePrompt(this)">
+                                限定感・特別感を演出
+                            </button>
+                            <button class="prompt-btn" data-prompt="社会的証明を強化して、多くの人が選んでいる安心感を訴求してください" onclick="togglePrompt(this)">
+                                社会的証明を強化
+                            </button>
+                            <button class="prompt-btn" data-prompt="リスク回避の心理を活用して、行動しないことのデメリットを強調してください" onclick="togglePrompt(this)">
+                                行動しないリスクを強調
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 価格・オファー改善カテゴリ -->
+                    <div class="prompt-category">
+                        <h5>💰 価格・オファー改善</h5>
+                        <div class="prompt-grid">
+                            <button class="prompt-btn" data-prompt="価格の心理的抵抗を下げるために、価値の積み上げ方式で料金説明を改善してください" onclick="togglePrompt(this)">
+                                価格の心理的抵抗を軽減
+                            </button>
+                            <button class="prompt-btn" data-prompt="分割払いや段階的料金プランを提示して、初期費用の負担感を軽減してください" onclick="togglePrompt(this)">
+                                支払い方法を柔軟に
+                            </button>
+                            <button class="prompt-btn" data-prompt="返金保証や無料お試しなど、リスクフリーのオファーを強調してください" onclick="togglePrompt(this)">
+                                リスクフリーを強調
+                            </button>
+                            <button class="prompt-btn" data-prompt="ボーナス特典や限定プレゼントを追加して、お得感を演出してください" onclick="togglePrompt(this)">
+                                特典・ボーナスを追加
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- コンテンツ改善カテゴリ -->
+                    <div class="prompt-category">
+                        <h5>📈 コンテンツ改善</h5>
+                        <div class="prompt-grid">
+                            <button class="prompt-btn" data-prompt="競合他社との差別化ポイントをもっと強調した内容に修正してください" onclick="togglePrompt(this)">
+                                競合との差別化を強調
+                            </button>
+                            <button class="prompt-btn" data-prompt="お客様の声をもっとリアルで具体的な内容に変更してください" onclick="togglePrompt(this)">
+                                お客様の声をよりリアルに
+                            </button>
+                            <button class="prompt-btn" data-prompt="ベネフィットの説明をより感情的で心に響く表現に変更してください" onclick="togglePrompt(this)">
+                                感情的なベネフィット表現
+                            </button>
+                            <button class="prompt-btn" data-prompt="ヘッドラインをもっとインパクトのある、注意を引くものに変更してください" onclick="togglePrompt(this)">
+                                ヘッドラインをより強力に
+                            </button>
+                            <button class="prompt-btn" data-prompt="ストーリーテリングを活用して、共感を呼ぶエピソードを追加してください" onclick="togglePrompt(this)">
+                                ストーリーテリングを追加
+                            </button>
+                            <button class="prompt-btn" data-prompt="数字やデータを使った根拠を増やして、信頼性を向上させてください" onclick="togglePrompt(this)">
+                                数字・データで信頼性向上
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- デザイン・UI改善カテゴリ -->
+                    <div class="prompt-category">
+                        <h5>🎨 デザイン・UI改善</h5>
+                        <div class="prompt-grid">
+                            <button class="prompt-btn" data-prompt="モバイル表示をより見やすく、タップしやすいデザインに改善してください" onclick="togglePrompt(this)">
+                                モバイル表示を改善
+                            </button>
+                            <button class="prompt-btn" data-prompt="CTAボタンのデザインと文言をもっとクリックしたくなるものに改善してください" onclick="togglePrompt(this)">
+                                CTAボタンを改善
+                            </button>
+                            <button class="prompt-btn" data-prompt="全体的な色使いをもっと信頼感のある、プロフェッショナルなものに変更してください" onclick="togglePrompt(this)">
+                                色使いをプロフェッショナルに
+                            </button>
+                            <button class="prompt-btn" data-prompt="視覚的な階層を明確にして、重要な情報が目立つレイアウトに改善してください" onclick="togglePrompt(this)">
+                                情報の階層を明確に
+                            </button>
+                            <button class="prompt-btn" data-prompt="アニメーションやマイクロインタラクションを追加して、よりエンゲージメントの高いデザインにしてください" onclick="togglePrompt(this)">
+                                インタラクション要素を追加
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 選択されたプロンプトの表示エリア -->
+                    <div class="selected-prompts-area" id="selectedPromptsArea" style="display: none;">
+                        <h5>✅ 選択中のプロンプト:</h5>
+                        <div class="selected-prompts-list" id="selectedPromptsList"></div>
+                        <div class="selected-prompts-count">
+                            選択数: <span id="selectedPromptsCount">0</span>個
+                        </div>
+                    </div>
+                </div>
+
+                <!-- チャット履歴 -->
+                <div class="chat-history" id="chatHistory" style="display: none;">
+                    <h4>💬 改善履歴:</h4>
+                    <div class="chat-messages" id="chatMessages"></div>
+                </div>
+                
+                <!-- 再生成ボタン（最下部） -->
+                <div class="regeneration-actions">
+                    <button class="btn-primary large" onclick="sendImprovementRequest()">
+                        🚀 選択した内容でLPを再生成
+                    </button>
+                    <button class="btn-secondary" onclick="clearImprovementForm()">
+                        🗑️ すべてクリア
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 設定パネル -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h3>⚙️ API設定</h3>
+                <button class="btn-icon" onclick="toggleSettings()">✕</button>
+            </div>
+            
+            <div class="settings-body">
+                <h4>🔑 API Keys</h4>
+                <div class="setting-group">
+                    <label>Grok API Key:</label>
+                    <div class="api-key-input-group">
+                        <input type="password" id="grokApiKey" placeholder="xai-..." class="api-key-input">
+                        <button class="btn-icon" onclick="toggleApiKeyVisibility('grokApiKey')" title="表示/非表示">
+                            <span id="grokApiKeyToggle">👁️</span>
+                        </button>
+                    </div>
+                    <small>最新トレンド分析 (モデル: grok-3-latest)<br>⚠️ APIキーは一時保存のみ</small>
+                    <div id="grokTestResult" class="test-result" style="display: none;"></div>
+                    <button class="btn-secondary" onclick="testApiConnection('grok')" style="margin-top: 0.5rem;">🧪 接続テスト</button>
+                </div>
+                
+                <h4 style="margin-top: 2rem;">🤖 使用するAIモデル</h4>
+                <div class="model-selector-compact">
+                    <label class="model-option">
+                        <input type="radio" name="selectedModel" value="grok" id="settingsGrokModel" checked>
+                        <div class="model-option-content">
+                            <span class="model-option-icon">🚀</span>
+                            <span class="model-option-name">Grok</span>
+                            <span class="model-option-status" id="settingsGrokStatus">-</span>
+                        </div>
+                    </label>
+                </div>
+                
+                <div class="settings-actions">
+                    <button class="btn-secondary" onclick="testSelectedModel()">🧪 接続テスト</button>
+                    <button class="btn-secondary" onclick="clearSettings()">🗑️ クリア</button>
+                    <button class="btn-primary" onclick="saveSettings()">💾 一時保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 初期設定モーダル -->
+    <div class="setup-modal" id="setupModal" style="display: none;">
+        <div class="setup-content">
+            <h2>🚀 初期設定</h2>
+            <p>AI API Keyを設定してください（最低1つは必要）</p>
+            
+            <div class="api-setup">
+                <div class="api-item">
+                    <div class="api-header">
+                        <strong>Grok API Key</strong>
+                        <span class="recommended">必須</span>
+                    </div>
+                    <input type="password" id="setupGrokKey" placeholder="xai-...">
+                    <small>最新トレンド分析・高品質</small>
+                </div>
+            </div>
+            
+            <div class="setup-actions">
+                <button onclick="skipSetup()" class="btn-secondary">スキップ</button>
+                <button onclick="saveSetup()" class="btn-primary">一時保存して開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ローディングオーバーレイ -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner large"></div>
+            <p id="loadingMessage">処理中...</p>
+        </div>
+    </div>
+
+    <!-- エラーメッセージ -->
+    <div class="error-toast" id="errorToast" style="display: none;">
+        <div class="error-content">
+            <span class="error-icon">⚠️</span>
+            <span class="error-message" id="errorMessage"></span>
+            <button class="error-close" onclick="hideError()">✕</button>
+        </div>
+    </div>
+
+    <!-- 詳細エラーモーダル -->
+    <div class="error-modal" id="errorModal" style="display: none;">
+        <div class="error-modal-content">
+            <div class="error-modal-header">
+                <h3>❌ エラー詳細</h3>
+                <button class="btn-icon" onclick="closeErrorModal()">✕</button>
+            </div>
+            <div class="error-modal-body">
+                <div class="error-section">
+                    <label>エラーメッセージ:</label>
+                    <div class="error-detail" id="errorDetailMessage"></div>
+                </div>
+                <div class="error-section">
+                    <label>エラーコード:</label>
+                    <div class="error-code-container">
+                        <code id="errorCode" class="error-code"></code>
+                        <button class="btn-copy" onclick="copyErrorCode()">📋 コピー</button>
+                    </div>
+                </div>
+                <div class="error-section">
+                    <label>発生場所:</label>
+                    <div class="error-detail" id="errorLocation"></div>
+                </div>
+                <div class="error-section">
+                    <label>時刻:</label>
+                    <div class="error-detail" id="errorTimestamp"></div>
+                </div>
+                <div class="error-section">
+                    <label>推奨対処法:</label>
+                    <div class="error-detail" id="errorSolution"></div>
+                </div>
+            </div>
+            <div class="error-modal-footer">
+                <button class="btn-secondary" onclick="copyFullError()">全体をコピー</button>
+                <button class="btn-secondary" onclick="openDebugConsole()">🔍 デバッグ</button>
+                <button class="btn-primary" onclick="closeErrorModal()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- エラーログモーダル -->
+    <div class="error-log-modal" id="errorLogModal" style="display: none;">
+        <div class="error-log-content">
+            <div class="error-log-header">
+                <h3>📋 エラーログ履歴</h3>
+                <div class="error-log-actions">
+                    <button class="btn-secondary" onclick="clearErrorLog()">🗑️ ログクリア</button>
+                    <button class="btn-secondary" onclick="downloadErrorLog()">💾 ダウンロード</button>
+                    <button class="btn-icon" onclick="closeErrorLog()">✕</button>
+                </div>
+            </div>
+            <div class="error-log-body">
+                <div class="error-log-stats" id="errorLogStats">
+                    <div class="stat-item">
+                        <span class="stat-label">総エラー数:</span>
+                        <span class="stat-value" id="totalErrors">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">最新エラー:</span>
+                        <span class="stat-value" id="latestError">なし</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">セッション開始:</span>
+                        <span class="stat-value" id="sessionStart">-</span>
+                    </div>
+                </div>
+                <div class="error-log-filters">
+                    <select id="errorTypeFilter" onchange="filterErrorLog()">
+                        <option value="">すべてのエラー</option>
+                        <option value="LP_GENERATION_ERROR">LP生成エラー</option>
+                        <option value="JSON_PARSE_ERROR">JSON解析エラー</option>
+                        <option value="API_ERROR">APIエラー</option>
+                        <option value="NETWORK_ERROR">ネットワークエラー</option>
+                    </select>
+                    <select id="errorModelFilter" onchange="filterErrorLog()">
+                        <option value="">すべてのモデル</option>
+                        <option value="grok">Grok</option>
+                    </select>
+                </div>
+                <div class="error-log-list" id="errorLogList">
+                    <div class="no-errors">
+                        <div class="no-errors-icon">✅</div>
+                        <div class="no-errors-text">エラーはありません</div>
+                        <div class="no-errors-desc">素晴らしい！現在のセッションでエラーは発生していません。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- トップページに戻るボタン -->
+    <button id="backToTopBtn" class="back-to-top" onclick="backToTop()" title="最初に戻る">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z"/>
+        </svg>
+        <span>最初に戻る</span>
+    </button>
+
+
+    <!-- JavaScriptファイル読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+    <script>
+      // PDF.js worker configuration
+      if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" crossorigin="anonymous"></script>
+    <script src="scripts/core.js"></script>
+    <script src="scripts/ai-service.js"></script>
+    <script src="scripts/app.js"></script>
+</body>
+</html>
