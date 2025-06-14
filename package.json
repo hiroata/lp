@@ -1,0 +1,27 @@
+{
+  "name": "lp-generator",
+  "version": "1.0.0",
+  "description": "AI-powered Landing Page Generator",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "deploy:unix": "bash deploy.sh",
+    "firebase:login": "firebase login",
+    "firebase:init": "firebase init",
+    "firebase:serve": "firebase serve"
+  },
+  "keywords": [
+    "landing-page",
+    "ai",
+    "generator",
+    "firebase"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "firebase-tools": "^13.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

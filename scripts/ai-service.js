@@ -39,20 +39,24 @@ class AIService {
     return null;
   }
 
-  // Prompt user for API key
+  // Check for available API keys without prompting
   async promptForApiKey() {
-    const apiKey = prompt(
-      '🔑 Grok API Key を入力してください:\n\n' +
-      '※ キーはページをリロードするまで一時保存されます\n' +
-      '※ xai- で始まるキーを入力してください\n' +
-      '※ セキュリティのため、永続保存はされません'
-    );
+    // Check only Grok provider for API keys
+    const apiKey = sessionStorage.getItem('TEMP_GROK_API_KEY');
+    if (apiKey) {
+      console.log('✅ Found Grok API key, using it instead of prompting');
+      return apiKey;
+    }
     
-    if (apiKey && apiKey.trim() && apiKey.startsWith('xai-')) {
-      // Save to sessionStorage only (cleared on page reload)
-      sessionStorage.setItem('TEMP_GROK_API_KEY', apiKey.trim());
-      console.log('✅ API Key saved temporarily (until page reload)');
-      return apiKey.trim();
+    // No API keys found - throw error instead of prompting
+    throw new Error('APIキーが設定されていません。自動検出でAPIキーを設定してください。');
+  }
+
+  // Get API key for any provider
+  getApiKey(provider) {
+    // Only support Grok
+    if (provider === 'grok') {
+      return this.getGrokApiKey();
     }
     
     return null;
@@ -61,17 +65,22 @@ class AIService {
   // Get available API keys
   getAvailableServices() {
     const services = [];
-    const grokKey = this.getGrokApiKey();
     
-    // Always include grok as available (will prompt for key if needed)
-    services.push('grok');
+    // Check only Grok provider
+    const key = this.getApiKey('grok');
+    if (key && key.trim()) {
+      services.push('grok');
+    }
     
-    console.log('📋 Available services:', services, 'Key available:', !!grokKey);
+    console.log('📋 Available services with API keys:', services);
     return services;
   }
 
 
-  // Grok API call
+
+
+
+  // Grok API call with streaming support
   async callGrok(prompt, options = {}) {
     let apiKey = this.getGrokApiKey();
     
@@ -108,7 +117,7 @@ class AIService {
       ],
       max_tokens: options.maxTokens || 8192,
       temperature: options.temperature || 0.7,
-      stream: false
+      stream: options.stream || false
     };
 
     try {
@@ -162,90 +171,41 @@ class AIService {
         );
       }
 
-      const data = await response.json();
-      
-      // Create debug info for developer console
-      const debugInfo = {
-        timestamp: new Date().toISOString(),
-        model: requestBody.model,
-        apiEndpoint: this.apiEndpoints.grok,
-        requestPromptLength: prompt.length,
-        response: {
-          hasData: !!data,
-          hasChoices: !!(data && data.choices),
-          choicesCount: data?.choices?.length || 0,
-          firstChoice: data?.choices?.[0],
-          responseStructure: Object.keys(data || {})
-        }
-      };
-      
-      console.group('🔍 Grok API Response Debug');
-      console.log('Debug Info:', debugInfo);
-      console.log('Full Response:', data);
-      console.groupEnd();
-      
-      // Save to window for debugging
-      window.lastGrokResponse = {
-        debugInfo,
-        fullResponse: data,
-        prompt: prompt.substring(0, 200) + '...'
-      };
-      
-      // Enhanced response validation
-      if (!data.choices || data.choices.length === 0) {
-        console.error('Grok API: No choices in response:', data);
-        throw new ErrorWithDetails(
-          'Grok APIから有効な応答が返されませんでした',
-          'GROK_NO_CHOICES',
-          {
-            solution: 'プロンプトを変更するか、しばらく待ってから再試行してください。',
-            location: 'callGrok',
-            responseData: data
+      // Handle streaming vs non-streaming response
+      if (requestBody.stream) {
+        return await this.handleStreamingResponse(response, prompt, requestBody.model, options);
+      } else {
+        const data = await response.json();
+        
+        // Create debug info for developer console
+        const debugInfo = {
+          timestamp: new Date().toISOString(),
+          model: requestBody.model,
+          apiEndpoint: this.apiEndpoints.grok,
+          requestPromptLength: prompt.length,
+          response: {
+            hasData: !!data,
+            hasChoices: !!(data && data.choices),
+            choicesCount: data?.choices?.length || 0,
+            firstChoice: data?.choices?.[0],
+            responseStructure: Object.keys(data || {})
           }
-        );
+        };
+        
+        console.group('🔍 Grok API Response Debug');
+        console.log('Debug Info:', debugInfo);
+        console.log('Full Response:', data);
+        console.groupEnd();
+        
+        // Save to window for debugging
+        window.lastGrokResponse = {
+          debugInfo,
+          fullResponse: data,
+          prompt: prompt.substring(0, 200) + '...'
+        };
+        
+        return this.processNonStreamingResponse(data, requestBody.model);
       }
-
-      const choice = data.choices[0];
-      if (!choice || !choice.message) {
-        console.error('Grok API: No message in choice:', choice);
-        throw new ErrorWithDetails(
-          'Grok APIの応答にメッセージがありません',
-          'GROK_NO_MESSAGE',
-          {
-            solution: 'プロンプトを変更するか、別のモデルを試してください。',
-            location: 'callGrok',
-            choice: choice
-          }
-        );
-      }
-
-      if (!choice.message.content) {
-        console.error('Grok API: No content in message:', choice.message);
-        throw new ErrorWithDetails(
-          'Grok APIからコンテンツが取得できませんでした',
-          'GROK_NO_CONTENT',
-          {
-            solution: 'プロンプトを変更するか、しばらく待ってから再試行してください。',
-            location: 'callGrok',
-            message: choice.message
-          }
-        );
-      }
-
-      const content = choice.message.content;
-      console.log('Grok API Response:', {
-        model: data.model,
-        requestedModel: requestBody.model,
-        defaultModel: this.defaultModels.grok,
-        contentLength: content?.length || 0,
-        usage: data.usage
-      });
-      
-      return {
-        content: content,
-        usage: data.usage || {},
-        model: data.model || requestBody.model || this.defaultModels.grok
-      };
     } catch (error) {
       console.error('Grok API Error details:', {
         message: error.message,
@@ -286,13 +246,15 @@ class AIService {
     
     if (!selectedModel) {
       throw new ErrorWithDetails(
-        'AIモデルが選択されていません',
-        'MODEL_NOT_SELECTED',
-        { location: 'generateWithSelectedModel' }
+        'APIキーが設定されていません。上部のAPI設定からAPIキーを入力してください。',
+        'NO_API_KEY_CONFIGURED',
+        { 
+          location: 'generateWithSelectedModel',
+          solution: 'API設定セクションで少なくとも1つのAPIキーを設定してください。'
+        }
       );
     }
 
-    // Grok is always available (will prompt for API key if needed)
     console.log(`Using selected model: ${selectedModel}`);
     
     try {
@@ -304,7 +266,7 @@ class AIService {
           break;
         default:
           throw new ErrorWithDetails(
-            `未対応のモデル: ${selectedModel}`,
+            `Grok以外のモデルは現在対応していません: ${selectedModel}`,
             'UNSUPPORTED_MODEL',
             { model: selectedModel }
           );
@@ -314,7 +276,7 @@ class AIService {
       return {
         ...result,
         service: selectedModel,
-        model: result.model || this.defaultModels[selectedModel] || 'grok-3-latest'
+        model: result.model || this.defaultModels[selectedModel]
       };
       
     } catch (error) {
@@ -343,11 +305,31 @@ class AIService {
   getSelectedModel() {
     let selectedModel = localStorage.getItem('SELECTED_AI_MODEL');
     
-    // If no model is selected, auto-select Grok
+    // If no model is selected, auto-select first available service
     if (!selectedModel) {
-      console.log('🤖 Auto-selecting Grok as default model');
-      this.setSelectedModel('grok');
-      return 'grok';
+      const availableServices = this.getAvailableServices();
+      if (availableServices.length > 0) {
+        selectedModel = availableServices[0];
+        console.log(`🤖 Auto-selecting ${selectedModel} as default model`);
+        this.setSelectedModel(selectedModel);
+        return selectedModel;
+      }
+      // No services available
+      return null;
+    }
+    
+    // Verify selected model has API key
+    const apiKey = this.getApiKey(selectedModel);
+    if (!apiKey) {
+      // Selected model no longer has API key, find another
+      const availableServices = this.getAvailableServices();
+      if (availableServices.length > 0) {
+        selectedModel = availableServices[0];
+        console.log(`🔄 Switching to ${selectedModel} (previous model key removed)`);
+        this.setSelectedModel(selectedModel);
+        return selectedModel;
+      }
+      return null;
     }
     
     return selectedModel;
@@ -430,18 +412,23 @@ class AIService {
 
   // Get detailed API status
   getAPIStatus() {
-    const grokKey = this.getGrokApiKey();
+    const status = {};
     
-    const status = {
-      grok: {
-        hasApiKey: !!grokKey,
-        keyLength: grokKey ? grokKey.length : 0,
-        keyPrefix: grokKey ? grokKey.substring(0, 8) + '...' : 'None',
-        endpoint: this.apiEndpoints.grok,
-        isValid: grokKey ? grokKey.startsWith('xai-') : false,
+    ['grok'].forEach(provider => {
+      const key = this.getApiKey(provider);
+      const prefixes = {
+        grok: 'xai-'
+      };
+      
+      status[provider] = {
+        hasApiKey: !!key,
+        keyLength: key ? key.length : 0,
+        keyPrefix: key ? key.substring(0, 8) + '...' : 'None',
+        endpoint: this.apiEndpoints[provider],
+        isValid: key ? key.startsWith(prefixes[provider]) : false,
         source: this.getApiKeySource()
-      }
-    };
+      };
+    });
     
     console.log('🔍 API Status Debug:', status);
     return status;
@@ -469,7 +456,7 @@ class AIService {
   // Specialized methods for different LP generation tasks
 
   // Generate complete LP from content
-  async generateLP(content, template = null) {
+  async generateLP(content, template = null, options = {}) {
     let templateInstructions = '';
     
     if (template) {
@@ -542,12 +529,24 @@ ${templateInstructions}
    - カウントダウンタイマー
    - 矢印やチェックマークの多用
 
+7. CSS設計の重要な指示:
+   - CTAボタンには必ず十分なmargin（上下最低40px以上）を設定
+   - P.S.セクションは独立したコンテナに配置し、margin-top: 60px以上を確保
+   - 全てのセクション間には適切な余白（margin: 40px 0以上）を設定
+   - CTAボタンは固定位置（position: fixed）を避け、通常のフローで配置
+   - z-indexの過度な使用を避け、要素の重なりを防ぐ
+   - フレックスボックスやグリッドを使用して堅牢なレイアウトを構築
+   - モバイルレスポンシブ対応（@media queries必須）
+   - ボタンやリンクには十分なクリック領域（min-height: 48px）を確保
+   - line-heightは1.6以上で読みやすさを確保
+   - フォントサイズは本文16px以上、見出しは階層的に設定
+
 必ず以下のJSON形式で応答してください：
 
 {
   "code": {
     "html": "<!DOCTYPE html><html lang='ja'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>タイトル</title></head><body><!-- 8000文字以上の充実したHTML --></body></html>",
-    "css": "/* モダンで充実したCSS（2000行以上） */",
+    "css": "/* 以下の点に配慮した充実したCSS:\n - 要素の重なりを防ぐ適切なmarginとpadding\n - CTAボタンとテキスト要素の明確な分離\n - レスポンシブデザイン対応\n - 読みやすい行間とフォントサイズ\n - セクション間の十分な余白\n */",
     "js": "// スムーズスクロール、アニメーション制御等のJavaScript"
   },
   "analysis": {
@@ -562,7 +561,10 @@ ${templateInstructions}
   }
 }`;
 
-    const result = await this.generateWithSelectedModel(prompt, { maxTokens: 16384 });
+    const result = await this.generateWithSelectedModel(prompt, { 
+      maxTokens: 16384,
+      ...options // ストリーミングオプションを含むその他のオプションをマージ
+    });
     
     // JSONの解析を試みる
     try {
@@ -983,7 +985,7 @@ JSONのみを返し、他の説明は不要です。`;
           result = await this.callGrok(testPrompt, { maxTokens: 100 });
           break;
         default:
-          throw new Error('Unknown service');
+          throw new Error('Only Grok service is supported');
       }
       
       return {
@@ -996,6 +998,153 @@ JSONのみを返し、他の説明は不要です。`;
       console.error(`${service} connection test failed:`, error);
       throw error; // Re-throw to show detailed error
     }
+  }
+
+  // === ストリーミング対応メソッド ===
+  
+  // Handle streaming response from Grok API
+  async handleStreamingResponse(response, prompt, model, options = {}) {
+    console.log('🌊 Starting streaming response handling...');
+    
+    if (!response.body) {
+      throw new Error('Response body is not available for streaming');
+    }
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullContent = '';
+    let usage = {};
+    
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          console.log('🏁 Streaming completed');
+          break;
+        }
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+        
+        for (const line of lines) {
+          if (line.trim() === '') continue;
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            
+            if (data === '[DONE]') {
+              console.log('✅ Stream finished with [DONE]');
+              continue;
+            }
+            
+            try {
+              const parsed = JSON.parse(data);
+              
+              if (parsed.choices?.[0]?.delta?.content) {
+                const chunk = parsed.choices[0].delta.content;
+                fullContent += chunk;
+                
+                // Call streaming callback if provided
+                if (options.onChunk) {
+                  options.onChunk(chunk, fullContent);
+                }
+                
+                // Update real-time display
+                if (window.lpApp?.uiController?.updateStreamingDisplay) {
+                  console.log('📡 Calling updateStreamingDisplay with chunk:', chunk.substring(0, 50) + '...');
+                  window.lpApp.uiController.updateStreamingDisplay(chunk, fullContent);
+                } else {
+                  console.warn('⚠️ updateStreamingDisplay not available');
+                }
+              }
+              
+              // Capture usage information
+              if (parsed.usage) {
+                usage = parsed.usage;
+              }
+              
+            } catch (parseError) {
+              console.warn('Failed to parse streaming chunk:', data);
+            }
+          }
+        }
+      }
+      
+      console.log('📊 Final streaming result:', {
+        contentLength: fullContent.length,
+        usage: usage
+      });
+      
+      return {
+        content: fullContent,
+        usage: usage,
+        model: model || this.defaultModels.grok
+      };
+      
+    } finally {
+      reader.releaseLock();
+    }
+  }
+  
+  // Process non-streaming response (existing logic)
+  processNonStreamingResponse(data, model) {
+    // Enhanced response validation
+    if (!data.choices || data.choices.length === 0) {
+      console.error('Grok API: No choices in response:', data);
+      throw new ErrorWithDetails(
+        'Grok APIから有効な応答が返されませんでした',
+        'GROK_NO_CHOICES',
+        {
+          solution: 'プロンプトを変更するか、しばらく待ってから再試行してください。',
+          location: 'callGrok',
+          responseData: data
+        }
+      );
+    }
+
+    const choice = data.choices[0];
+    if (!choice || !choice.message) {
+      console.error('Grok API: No message in choice:', choice);
+      throw new ErrorWithDetails(
+        'Grok APIの応答にメッセージがありません',
+        'GROK_NO_MESSAGE',
+        {
+          solution: 'プロンプトを変更するか、別のモデルを試してください。',
+          location: 'callGrok',
+          choice: choice
+        }
+      );
+    }
+
+    if (!choice.message.content) {
+      console.error('Grok API: No content in message:', choice.message);
+      throw new ErrorWithDetails(
+        'Grok APIからコンテンツが取得できませんでした',
+        'GROK_NO_CONTENT',
+        {
+          solution: 'プロンプトを変更するか、しばらく待ってから再試行してください。',
+          location: 'callGrok',
+          message: choice.message
+        }
+      );
+    }
+
+    const content = choice.message.content;
+    console.log('Grok API Response:', {
+      model: data.model,
+      requestedModel: model,
+      defaultModel: this.defaultModels.grok,
+      contentLength: content?.length || 0,
+      usage: data.usage
+    });
+    
+    return {
+      content: content,
+      usage: data.usage || {},
+      model: data.model || model || this.defaultModels.grok
+    };
   }
 }
 
@@ -1016,7 +1165,6 @@ window.debugAPI = {
     console.log('🔍 Storage Check:');
     console.log('  - envLoader:', window.envLoader?.get('GROK_API_KEY')?.substring(0, 8) + '...' || 'None');
     console.log('  - sessionStorage:', sessionStorage.getItem('TEMP_GROK_API_KEY')?.substring(0, 8) + '...' || 'None');
-    console.log('  - localStorage (old):', localStorage.getItem('GROK_API_KEY')?.substring(0, 8) + '...' || 'None');
     console.log('  - window.GROK_API_KEY:', window.GROK_API_KEY?.substring(0, 8) + '...' || 'None');
     
     return {
@@ -1039,10 +1187,8 @@ window.debugAPI = {
   },
   clearAllKeys: () => {
     sessionStorage.removeItem('TEMP_GROK_API_KEY');
-    localStorage.removeItem('GROK_API_KEY');
-    localStorage.removeItem('LP_ENV_GROK_API_KEY');
     localStorage.removeItem('SELECTED_AI_MODEL');
-    console.log('🗑️ All API Keys cleared');
+    console.log('🗑️ Grok API Key cleared');
   },
   forceCleanup: () => {
     // Force cleanup of all possible API key storage locations
@@ -1052,8 +1198,7 @@ window.debugAPI = {
     
     // Clear all possible localStorage keys
     const keysToRemove = [
-      'GROK_API_KEY', 'GEMINI_API_KEY', 'SELECTED_AI_MODEL',
-      'LP_ENV_GROK_API_KEY', 'LP_ENV_GEMINI_API_KEY', 'LP_ENV_SELECTED_AI_MODEL'
+      'SELECTED_AI_MODEL'
     ];
     
     keysToRemove.forEach(key => {
@@ -1069,8 +1214,7 @@ window.debugAPI = {
     console.log('🧹 Complete cleanup finished - please reload the page');
     
     // Reload the page to ensure clean state
-    if (confirm('Cleanup complete. Reload page for clean state?')) {
-      window.location.reload();
-    }
+    // クリーンアップ完了（確認ダイアログを削除）
+    console.log('クリーンアップ完了');
   }
 };

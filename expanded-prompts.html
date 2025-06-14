@@ -1,0 +1,575 @@
+<!-- 拡張版サンプルプロンプト（150個以上） -->
+
+<!-- 文体・トーン変更カテゴリ（30個） -->
+<div class="prompt-category">
+    <h5>📝 文体・トーン変更</h5>
+    <div class="prompt-grid">
+        <button class="prompt-btn" data-prompt="関西弁の親しみやすい文体に変更して、もっとフレンドリーで話しかけやすい雰囲気にしてください" onclick="togglePrompt(this)">
+            関西弁で親しみやすく
+        </button>
+        <button class="prompt-btn" data-prompt="敬語を多用したより丁寧で上品な文体に変更してください" onclick="togglePrompt(this)">
+            丁寧で上品な敬語に
+        </button>
+        <button class="prompt-btn" data-prompt="若者言葉やカジュアルな表現を使って、20代向けの親近感のある文体に変更してください" onclick="togglePrompt(this)">
+            若者向けカジュアルに
+        </button>
+        <button class="prompt-btn" data-prompt="専門用語を使った権威性のある、エキスパート向けの文体に変更してください" onclick="togglePrompt(this)">
+            専門性・権威性重視に
+        </button>
+        <button class="prompt-btn" data-prompt="優しく温かみのある、ママ友に話すような親しみやすい文体に変更してください" onclick="togglePrompt(this)">
+            ママ友トークのように
+        </button>
+        <button class="prompt-btn" data-prompt="ビジネスライクで簡潔、効率重視の文体に変更してください" onclick="togglePrompt(this)">
+            ビジネスライクに
+        </button>
+        <button class="prompt-btn" data-prompt="九州弁を使った温かみのある地方色豊かな文体に変更してください" onclick="togglePrompt(this)">
+            九州弁で温かく
+        </button>
+        <button class="prompt-btn" data-prompt="東北弁を使った素朴で誠実な印象の文体に変更してください" onclick="togglePrompt(this)">
+            東北弁で誠実に
+        </button>
+        <button class="prompt-btn" data-prompt="英語を交えたグローバルでスタイリッシュな文体に変更してください" onclick="togglePrompt(this)">
+            英語ミックスでグローバルに
+        </button>
+        <button class="prompt-btn" data-prompt="古風で格調高い、和風の趣ある文体に変更してください" onclick="togglePrompt(this)">
+            古風で格調高く
+        </button>
+        <button class="prompt-btn" data-prompt="IT業界特有のテック系スラングを使った文体に変更してください" onclick="togglePrompt(this)">
+            テック系スラングで
+        </button>
+        <button class="prompt-btn" data-prompt="医療従事者向けの専門的かつ信頼感のある文体に変更してください" onclick="togglePrompt(this)">
+            医療専門職向けに
+        </button>
+        <button class="prompt-btn" data-prompt="スポーツ選手のような熱く情熱的な文体に変更してください" onclick="togglePrompt(this)">
+            スポーツ選手風に熱く
+        </button>
+        <button class="prompt-btn" data-prompt="アーティスティックで感性に訴える詩的な文体に変更してください" onclick="togglePrompt(this)">
+            アーティスティックに
+        </button>
+        <button class="prompt-btn" data-prompt="教師のような分かりやすく教育的な文体に変更してください" onclick="togglePrompt(this)">
+            教師のように分かりやすく
+        </button>
+        <button class="prompt-btn" data-prompt="コメディアンのようなユーモアあふれる文体に変更してください" onclick="togglePrompt(this)">
+            ユーモアたっぷりに
+        </button>
+        <button class="prompt-btn" data-prompt="ニュースキャスターのような客観的で信頼性の高い文体に変更してください" onclick="togglePrompt(this)">
+            ニュースキャスター風に
+        </button>
+        <button class="prompt-btn" data-prompt="インフルエンサーのようなトレンディで共感を呼ぶ文体に変更してください" onclick="togglePrompt(this)">
+            インフルエンサー風に
+        </button>
+        <button class="prompt-btn" data-prompt="哲学者のような深遠で思索的な文体に変更してください" onclick="togglePrompt(this)">
+            哲学的で深遠に
+        </button>
+        <button class="prompt-btn" data-prompt="子供向けの分かりやすくて楽しい文体に変更してください" onclick="togglePrompt(this)">
+            子供向けに楽しく
+        </button>
+        <button class="prompt-btn" data-prompt="エンジニア向けの論理的で技術的な文体に変更してください" onclick="togglePrompt(this)">
+            エンジニア向けに論理的に
+        </button>
+        <button class="prompt-btn" data-prompt="ラッパーのような韻を踏んだリズミカルな文体に変更してください" onclick="togglePrompt(this)">
+            ラップ調でリズミカルに
+        </button>
+        <button class="prompt-btn" data-prompt="茶道の師範のような礼儀正しく伝統的な文体に変更してください" onclick="togglePrompt(this)">
+            茶道の心で礼儀正しく
+        </button>
+        <button class="prompt-btn" data-prompt="SF作家のような未来的で革新的な文体に変更してください" onclick="togglePrompt(this)">
+            SF的で未来志向に
+        </button>
+        <button class="prompt-btn" data-prompt="料理研究家のような親切で実用的な文体に変更してください" onclick="togglePrompt(this)">
+            料理研究家風に実用的に
+        </button>
+        <button class="prompt-btn" data-prompt="探偵小説のようなミステリアスで引き込まれる文体に変更してください" onclick="togglePrompt(this)">
+            ミステリアスに
+        </button>
+        <button class="prompt-btn" data-prompt="アナウンサーのような明瞭で聞き取りやすい文体に変更してください" onclick="togglePrompt(this)">
+            アナウンサー風に明瞭に
+        </button>
+        <button class="prompt-btn" data-prompt="禅僧のような静謐で瞑想的な文体に変更してください" onclick="togglePrompt(this)">
+            禅の心で静謐に
+        </button>
+        <button class="prompt-btn" data-prompt="コンサルタントのような分析的で提案型の文体に変更してください" onclick="togglePrompt(this)">
+            コンサルタント風に
+        </button>
+        <button class="prompt-btn" data-prompt="漫才師のようなテンポの良い掛け合い風の文体に変更してください" onclick="togglePrompt(this)">
+            漫才風にテンポよく
+        </button>
+    </div>
+</div>
+
+<!-- ペルソナ・ターゲット変更カテゴリ（25個） -->
+<div class="prompt-category">
+    <h5>👥 ペルソナ・ターゲット変更</h5>
+    <div class="prompt-grid">
+        <button class="prompt-btn" data-prompt="ペルソナを30代女性の働くママに変更して、時短や効率性を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            30代働くママ向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを50代以上のシニア層に変更して、安心感と信頼性を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            シニア層向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを起業家・経営者に変更して、ROIや効率性を重視したビジネス向けコピーに修正してください" onclick="togglePrompt(this)">
+            起業家・経営者向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを学生・新社会人に変更して、コストパフォーマンスと成長を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            学生・新社会人向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを40代男性のビジネスマンに変更して、キャリアアップと成功を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            40代ビジネスマン向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを20代女性のOLに変更して、トレンドと自己投資を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            20代女性OL向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナをフリーランスに変更して、自由と柔軟性を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            フリーランス向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを子育て中の専業主婦に変更して、家族の幸せと節約を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            専業主婦向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを医療従事者に変更して、専門性と実用性を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            医療従事者向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを教育関係者に変更して、学習効果と成長を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            教育関係者向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナをアスリートに変更して、パフォーマンスと結果を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            アスリート向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナをクリエイターに変更して、創造性と表現を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            クリエイター向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを投資家に変更して、リターンとリスク管理を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            投資家向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナをエンジニアに変更して、技術的詳細と効率を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            エンジニア向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを美容・健康意識の高い女性に変更して、美と健康を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            美容・健康意識層向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを環境意識の高い人に変更して、サステナビリティを重視したコピーに修正してください" onclick="togglePrompt(this)">
+            環境意識層向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナをペット愛好家に変更して、ペットとの生活を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            ペット愛好家向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを旅行好きに変更して、冒険と体験を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            旅行好き向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナをゲーマーに変更して、エンターテインメントと達成感を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            ゲーマー向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを料理好きに変更して、グルメと創作を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            料理好き向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを音楽愛好家に変更して、感性と体験を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            音楽愛好家向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナを読書家に変更して、知識と教養を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            読書家向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナをミニマリストに変更して、シンプルさと本質を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            ミニマリスト向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナをDIY愛好家に変更して、創作と達成感を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            DIY愛好家向けに
+        </button>
+        <button class="prompt-btn" data-prompt="ペルソナをスピリチュアル系に変更して、内面と成長を重視したコピーに修正してください" onclick="togglePrompt(this)">
+            スピリチュアル系向けに
+        </button>
+    </div>
+</div>
+
+<!-- 心理訴求・緊急性カテゴリ（20個） -->
+<div class="prompt-category">
+    <h5>⚡ 心理訴求・緊急性</h5>
+    <div class="prompt-grid">
+        <button class="prompt-btn" data-prompt="もっと緊急性を強調して、今すぐ行動したくなるようなコピーに変更してください" onclick="togglePrompt(this)">
+            緊急性を強調
+        </button>
+        <button class="prompt-btn" data-prompt="FOMO（見逃し恐怖）を活用して、今しか手に入らない特別感を演出してください" onclick="togglePrompt(this)">
+            限定感・特別感を演出
+        </button>
+        <button class="prompt-btn" data-prompt="社会的証明を強化して、多くの人が選んでいる安心感を訴求してください" onclick="togglePrompt(this)">
+            社会的証明を強化
+        </button>
+        <button class="prompt-btn" data-prompt="リスク回避の心理を活用して、行動しないことのデメリットを強調してください" onclick="togglePrompt(this)">
+            行動しないリスクを強調
+        </button>
+        <button class="prompt-btn" data-prompt="希少性の原理を使って、限定数量の価値を強調してください" onclick="togglePrompt(this)">
+            希少性で価値を高める
+        </button>
+        <button class="prompt-btn" data-prompt="権威性を活用して、専門家の推薦を前面に出してください" onclick="togglePrompt(this)">
+            権威性を前面に
+        </button>
+        <button class="prompt-btn" data-prompt="返報性の原理を使って、先に価値を提供する構成に変更してください" onclick="togglePrompt(this)">
+            返報性で信頼構築
+        </button>
+        <button class="prompt-btn" data-prompt="コミットメントと一貫性の原理を使って、小さな同意から始める構成にしてください" onclick="togglePrompt(this)">
+            段階的コミットメント
+        </button>
+        <button class="prompt-btn" data-prompt="好意の原理を使って、親近感と共感を強調してください" onclick="togglePrompt(this)">
+            好意と共感を重視
+        </button>
+        <button class="prompt-btn" data-prompt="損失回避の心理を使って、失うものを明確にしてください" onclick="togglePrompt(this)">
+            損失回避を活用
+        </button>
+        <button class="prompt-btn" data-prompt="アンカリング効果を使って、価格の妥当性を演出してください" onclick="togglePrompt(this)">
+            アンカリング効果で価値演出
+        </button>
+        <button class="prompt-btn" data-prompt="バンドワゴン効果を使って、流行に乗り遅れない感を演出してください" onclick="togglePrompt(this)">
+            流行に乗る心理を刺激
+        </button>
+        <button class="prompt-btn" data-prompt="プロスペクト理論を活用して、得られる利益を具体的に示してください" onclick="togglePrompt(this)">
+            利益を具体的に可視化
+        </button>
+        <button class="prompt-btn" data-prompt="認知的不協和を解消する方向で、購入の正当性を強化してください" onclick="togglePrompt(this)">
+            購入の正当性を強化
+        </button>
+        <button class="prompt-btn" data-prompt="ハロー効果を使って、第一印象を最大限に活用してください" onclick="togglePrompt(this)">
+            第一印象を最大化
+        </button>
+        <button class="prompt-btn" data-prompt="ツァイガルニク効果を使って、続きが気になる構成にしてください" onclick="togglePrompt(this)">
+            続きが気になる構成に
+        </button>
+        <button class="prompt-btn" data-prompt="単純接触効果を考慮して、繰り返しのメッセージを効果的に配置してください" onclick="togglePrompt(this)">
+            繰り返しで親近感を
+        </button>
+        <button class="prompt-btn" data-prompt="フレーミング効果を使って、同じ情報をポジティブに表現してください" onclick="togglePrompt(this)">
+            ポジティブフレーミング
+        </button>
+        <button class="prompt-btn" data-prompt="確証バイアスを活用して、読者の既存の信念を強化してください" onclick="togglePrompt(this)">
+            既存の信念を強化
+        </button>
+        <button class="prompt-btn" data-prompt="感情的な訴求を強化して、理性より感情に訴えるコピーにしてください" onclick="togglePrompt(this)">
+            感情に強く訴える
+        </button>
+    </div>
+</div>
+
+<!-- 価格・オファー改善カテゴリ（25個） -->
+<div class="prompt-category">
+    <h5>💰 価格・オファー改善</h5>
+    <div class="prompt-grid">
+        <button class="prompt-btn" data-prompt="価格の心理的抵抗を下げるために、価値の積み上げ方式で料金説明を改善してください" onclick="togglePrompt(this)">
+            価格の心理的抵抗を軽減
+        </button>
+        <button class="prompt-btn" data-prompt="分割払いや段階的料金プランを提示して、初期費用の負担感を軽減してください" onclick="togglePrompt(this)">
+            支払い方法を柔軟に
+        </button>
+        <button class="prompt-btn" data-prompt="返金保証や無料お試しなど、リスクフリーのオファーを強調してください" onclick="togglePrompt(this)">
+            リスクフリーを強調
+        </button>
+        <button class="prompt-btn" data-prompt="ボーナス特典や限定プレゼントを追加して、お得感を演出してください" onclick="togglePrompt(this)">
+            特典・ボーナスを追加
+        </button>
+        <button class="prompt-btn" data-prompt="早期割引や期間限定価格を設定して、即決を促してください" onclick="togglePrompt(this)">
+            早期割引で即決促進
+        </button>
+        <button class="prompt-btn" data-prompt="バンドル商品として、セット価格のお得感を演出してください" onclick="togglePrompt(this)">
+            バンドル価格でお得感
+        </button>
+        <button class="prompt-btn" data-prompt="サブスクリプションモデルを提案して、継続的な価値を強調してください" onclick="togglePrompt(this)">
+            サブスクモデルで継続価値
+        </button>
+        <button class="prompt-btn" data-prompt="価格を時間単価に換算して、コストパフォーマンスを強調してください" onclick="togglePrompt(this)">
+            時間単価でコスパ強調
+        </button>
+        <button class="prompt-btn" data-prompt="競合との価格比較表を作成して、優位性を明確にしてください" onclick="togglePrompt(this)">
+            競合比較で優位性明確化
+        </button>
+        <button class="prompt-btn" data-prompt="アップセルやクロスセルの提案を自然に組み込んでください" onclick="togglePrompt(this)">
+            アップセル・クロスセル提案
+        </button>
+        <button class="prompt-btn" data-prompt="グループ割引や紹介割引を設定して、口コミを促進してください" onclick="togglePrompt(this)">
+            グループ・紹介割引
+        </button>
+        <button class="prompt-btn" data-prompt="価格アンカリングを使って、中間価格帯の魅力を高めてください" onclick="togglePrompt(this)">
+            中間価格帯を魅力的に
+        </button>
+        <button class="prompt-btn" data-prompt="成果報酬型の料金体系を提案して、リスクを最小化してください" onclick="togglePrompt(this)">
+            成果報酬型でリスク最小化
+        </button>
+        <button class="prompt-btn" data-prompt="初回限定価格を設定して、トライアルのハードルを下げてください" onclick="togglePrompt(this)">
+            初回限定でハードル低減
+        </button>
+        <button class="prompt-btn" data-prompt="年間契約の割引を強調して、長期コミットメントを促してください" onclick="togglePrompt(this)">
+            年間契約割引を強調
+        </button>
+        <button class="prompt-btn" data-prompt="価値換算（ROI）を明示して、投資対効果を可視化してください" onclick="togglePrompt(this)">
+            ROIを明確に可視化
+        </button>
+        <button class="prompt-btn" data-prompt="段階的な料金プランを提示して、成長に応じた選択肢を提供してください" onclick="togglePrompt(this)">
+            成長対応の料金プラン
+        </button>
+        <button class="prompt-btn" data-prompt="隠れたコストがないことを強調して、透明性をアピールしてください" onclick="togglePrompt(this)">
+            透明性の高い価格設定
+        </button>
+        <button class="prompt-btn" data-prompt="カスタマイズ可能な料金プランを提案して、柔軟性を強調してください" onclick="togglePrompt(this)">
+            カスタマイズ可能プラン
+        </button>
+        <button class="prompt-btn" data-prompt="ポイント制度や会員特典を導入して、継続利用を促してください" onclick="togglePrompt(this)">
+            ポイント・会員特典
+        </button>
+        <button class="prompt-btn" data-prompt="季節限定キャンペーンを設定して、タイムリーな購買を促してください" onclick="togglePrompt(this)">
+            季節限定キャンペーン
+        </button>
+        <button class="prompt-btn" data-prompt="学生割引やシニア割引など、セグメント別価格を設定してください" onclick="togglePrompt(this)">
+            セグメント別割引
+        </button>
+        <button class="prompt-btn" data-prompt="無料版と有料版の差を明確にして、アップグレードを促してください" onclick="togglePrompt(this)">
+            フリーミアムモデル
+        </button>
+        <button class="prompt-btn" data-prompt="価格保証制度を導入して、購入の安心感を高めてください" onclick="togglePrompt(this)">
+            価格保証で安心感
+        </button>
+        <button class="prompt-btn" data-prompt="お試し期間の延長オプションを提供して、じっくり検討できるようにしてください" onclick="togglePrompt(this)">
+            お試し期間延長オプション
+        </button>
+    </div>
+</div>
+
+<!-- コンテンツ改善カテゴリ（30個） -->
+<div class="prompt-category">
+    <h5>📈 コンテンツ改善</h5>
+    <div class="prompt-grid">
+        <button class="prompt-btn" data-prompt="競合他社との差別化ポイントをもっと強調した内容に修正してください" onclick="togglePrompt(this)">
+            競合との差別化を強調
+        </button>
+        <button class="prompt-btn" data-prompt="お客様の声をもっとリアルで具体的な内容に変更してください" onclick="togglePrompt(this)">
+            お客様の声をよりリアルに
+        </button>
+        <button class="prompt-btn" data-prompt="ベネフィットの説明をより感情的で心に響く表現に変更してください" onclick="togglePrompt(this)">
+            感情的なベネフィット表現
+        </button>
+        <button class="prompt-btn" data-prompt="ヘッドラインをもっとインパクトのある、注意を引くものに変更してください" onclick="togglePrompt(this)">
+            ヘッドラインをより強力に
+        </button>
+        <button class="prompt-btn" data-prompt="ストーリーテリングを活用して、共感を呼ぶエピソードを追加してください" onclick="togglePrompt(this)">
+            ストーリーテリングを追加
+        </button>
+        <button class="prompt-btn" data-prompt="数字やデータを使った根拠を増やして、信頼性を向上させてください" onclick="togglePrompt(this)">
+            数字・データで信頼性向上
+        </button>
+        <button class="prompt-btn" data-prompt="ビフォーアフターの事例を追加して、変化を視覚的に示してください" onclick="togglePrompt(this)">
+            ビフォーアフター事例追加
+        </button>
+        <button class="prompt-btn" data-prompt="FAQセクションを充実させて、購入前の不安を解消してください" onclick="togglePrompt(this)">
+            FAQセクションを充実
+        </button>
+        <button class="prompt-btn" data-prompt="専門家の推薦コメントを追加して、権威性を高めてください" onclick="togglePrompt(this)">
+            専門家の推薦を追加
+        </button>
+        <button class="prompt-btn" data-prompt="使用方法やステップを分かりやすく図解してください" onclick="togglePrompt(this)">
+            使用方法を図解で説明
+        </button>
+        <button class="prompt-btn" data-prompt="成功事例やケーススタディを詳しく紹介してください" onclick="togglePrompt(this)">
+            成功事例を詳しく紹介
+        </button>
+        <button class="prompt-btn" data-prompt="問題提起をより具体的で共感できるものに変更してください" onclick="togglePrompt(this)">
+            問題提起を具体的に
+        </button>
+        <button class="prompt-btn" data-prompt="解決策の独自性とイノベーションを強調してください" onclick="togglePrompt(this)">
+            独自性とイノベーション強調
+        </button>
+        <button class="prompt-btn" data-prompt="チェックリストやワークシートなど、実用的なツールを提供してください" onclick="togglePrompt(this)">
+            実用的ツールを提供
+        </button>
+        <button class="prompt-btn" data-prompt="インフォグラフィックを活用して、複雑な情報を分かりやすくしてください" onclick="togglePrompt(this)">
+            インフォグラフィック活用
+        </button>
+        <button class="prompt-btn" data-prompt="動画や音声コンテンツへのリンクを追加してください" onclick="togglePrompt(this)">
+            マルチメディア要素追加
+        </button>
+        <button class="prompt-btn" data-prompt="読者参加型のコンテンツ（クイズ、診断など）を追加してください" onclick="togglePrompt(this)">
+            読者参加型コンテンツ
+        </button>
+        <button class="prompt-btn" data-prompt="業界の最新トレンドや統計を盛り込んでください" onclick="togglePrompt(this)">
+            最新トレンド・統計追加
+        </button>
+        <button class="prompt-btn" data-prompt="比較表やランキングを使って、選択を簡単にしてください" onclick="togglePrompt(this)">
+            比較表・ランキング活用
+        </button>
+        <button class="prompt-btn" data-prompt="顧客の成功ストーリーを時系列で詳しく紹介してください" onclick="togglePrompt(this)">
+            成功ストーリーを時系列で
+        </button>
+        <button class="prompt-btn" data-prompt="製品やサービスの開発秘話を共有してください" onclick="togglePrompt(this)">
+            開発秘話を共有
+        </button>
+        <button class="prompt-btn" data-prompt="よくある失敗例とその回避方法を説明してください" onclick="togglePrompt(this)">
+            失敗例と回避方法
+        </button>
+        <button class="prompt-btn" data-prompt="業界用語を分かりやすく解説するセクションを追加してください" onclick="togglePrompt(this)">
+            業界用語の解説追加
+        </button>
+        <button class="prompt-btn" data-prompt="顧客インタビューの内容を盛り込んでください" onclick="togglePrompt(this)">
+            顧客インタビュー追加
+        </button>
+        <button class="prompt-btn" data-prompt="アワードや認証、メディア掲載実績を強調してください" onclick="togglePrompt(this)">
+            実績・認証を強調
+        </button>
+        <button class="prompt-btn" data-prompt="環境への配慮やSDGsへの取り組みを追加してください" onclick="togglePrompt(this)">
+            SDGs・環境配慮を追加
+        </button>
+        <button class="prompt-btn" data-prompt="カスタマーサポートの充実度を具体的に説明してください" onclick="togglePrompt(this)">
+            サポート体制を詳しく
+        </button>
+        <button class="prompt-btn" data-prompt="導入プロセスを分かりやすくステップ化してください" onclick="togglePrompt(this)">
+            導入プロセスをステップ化
+        </button>
+        <button class="prompt-btn" data-prompt="ROI計算ツールやシミュレーターを提供してください" onclick="togglePrompt(this)">
+            ROI計算ツール提供
+        </button>
+        <button class="prompt-btn" data-prompt="ユーザーコミュニティや交流の場について紹介してください" onclick="togglePrompt(this)">
+            コミュニティ要素を紹介
+        </button>
+    </div>
+</div>
+
+<!-- デザイン・UI改善カテゴリ（25個） -->
+<div class="prompt-category">
+    <h5>🎨 デザイン・UI改善</h5>
+    <div class="prompt-grid">
+        <button class="prompt-btn" data-prompt="モバイル表示をより見やすく、タップしやすいデザインに改善してください" onclick="togglePrompt(this)">
+            モバイル表示を改善
+        </button>
+        <button class="prompt-btn" data-prompt="CTAボタンのデザインと文言をもっとクリックしたくなるものに改善してください" onclick="togglePrompt(this)">
+            CTAボタンを改善
+        </button>
+        <button class="prompt-btn" data-prompt="全体的な色使いをもっと信頼感のある、プロフェッショナルなものに変更してください" onclick="togglePrompt(this)">
+            色使いをプロフェッショナルに
+        </button>
+        <button class="prompt-btn" data-prompt="視覚的な階層を明確にして、重要な情報が目立つレイアウトに改善してください" onclick="togglePrompt(this)">
+            情報の階層を明確に
+        </button>
+        <button class="prompt-btn" data-prompt="アニメーションやマイクロインタラクションを追加して、よりエンゲージメントの高いデザインにしてください" onclick="togglePrompt(this)">
+            インタラクション要素を追加
+        </button>
+        <button class="prompt-btn" data-prompt="フォントサイズと行間を調整して、読みやすさを向上させてください" onclick="togglePrompt(this)">
+            読みやすさを向上
+        </button>
+        <button class="prompt-btn" data-prompt="ホワイトスペースを効果的に使って、すっきりとしたデザインにしてください" onclick="togglePrompt(this)">
+            ホワイトスペース活用
+        </button>
+        <button class="prompt-btn" data-prompt="アイコンや図形を使って、テキストを視覚的に補完してください" onclick="togglePrompt(this)">
+            アイコン・図形で補完
+        </button>
+        <button class="prompt-btn" data-prompt="グリッドレイアウトを採用して、整理された印象にしてください" onclick="togglePrompt(this)">
+            グリッドレイアウト採用
+        </button>
+        <button class="prompt-btn" data-prompt="カード型UIを使って、情報を分かりやすく整理してください" onclick="togglePrompt(this)">
+            カード型UIで整理
+        </button>
+        <button class="prompt-btn" data-prompt="プログレスバーやステップ表示を追加して、進捗を可視化してください" onclick="togglePrompt(this)">
+            進捗を可視化
+        </button>
+        <button class="prompt-btn" data-prompt="ダークモード対応のデザインを追加してください" onclick="togglePrompt(this)">
+            ダークモード対応
+        </button>
+        <button class="prompt-btn" data-prompt="アクセシビリティを向上させて、誰でも使いやすいデザインにしてください" onclick="togglePrompt(this)">
+            アクセシビリティ向上
+        </button>
+        <button class="prompt-btn" data-prompt="ローディング画面やスケルトンスクリーンを追加してください" onclick="togglePrompt(this)">
+            ローディングUI追加
+        </button>
+        <button class="prompt-btn" data-prompt="ツールチップやヘルプテキストを追加して、使い方を分かりやすくしてください" onclick="togglePrompt(this)">
+            ヘルプ機能を追加
+        </button>
+        <button class="prompt-btn" data-prompt="パララックススクロール効果を追加して、動きのあるデザインにしてください" onclick="togglePrompt(this)">
+            パララックス効果追加
+        </button>
+        <button class="prompt-btn" data-prompt="グラデーションやシャドウを使って、深みのあるデザインにしてください" onclick="togglePrompt(this)">
+            深みのあるデザインに
+        </button>
+        <button class="prompt-btn" data-prompt="タブやアコーディオンを使って、情報を効率的に表示してください" onclick="togglePrompt(this)">
+            タブ・アコーディオン活用
+        </button>
+        <button class="prompt-btn" data-prompt="フローティングアクションボタンを追加して、重要なアクションを常に表示してください" onclick="togglePrompt(this)">
+            フローティングボタン追加
+        </button>
+        <button class="prompt-btn" data-prompt="チャットボットやヘルプウィジェットを追加してください" onclick="togglePrompt(this)">
+            チャットボット追加
+        </button>
+        <button class="prompt-btn" data-prompt="ブランドカラーを効果的に使って、一貫性のあるデザインにしてください" onclick="togglePrompt(this)">
+            ブランドカラー統一
+        </button>
+        <button class="prompt-btn" data-prompt="レスポンシブイメージを使って、全デバイスで最適な表示にしてください" onclick="togglePrompt(this)">
+            レスポンシブイメージ最適化
+        </button>
+        <button class="prompt-btn" data-prompt="フォームデザインを改善して、入力しやすくしてください" onclick="togglePrompt(this)">
+            フォームデザイン改善
+        </button>
+        <button class="prompt-btn" data-prompt="エラーメッセージや成功メッセージを分かりやすくデザインしてください" onclick="togglePrompt(this)">
+            メッセージデザイン改善
+        </button>
+        <button class="prompt-btn" data-prompt="ソーシャルプルーフ要素（SNSフォロワー数など）を目立たせてください" onclick="togglePrompt(this)">
+            ソーシャルプルーフ強調
+        </button>
+    </div>
+</div>
+
+<!-- 業界別カスタマイズカテゴリ（新規：20個） -->
+<div class="prompt-category">
+    <h5>🏢 業界別カスタマイズ</h5>
+    <div class="prompt-grid">
+        <button class="prompt-btn" data-prompt="IT・テクノロジー業界向けに、技術的な優位性と革新性を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            IT・テクノロジー業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="医療・ヘルスケア業界向けに、安全性と信頼性を重視したコピーに変更してください" onclick="togglePrompt(this)">
+            医療・ヘルスケア業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="教育業界向けに、学習効果と成長を重視したコピーに変更してください" onclick="togglePrompt(this)">
+            教育業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="金融業界向けに、セキュリティと実績を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            金融業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="不動産業界向けに、立地と投資価値を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            不動産業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="飲食業界向けに、味と体験を重視したコピーに変更してください" onclick="togglePrompt(this)">
+            飲食業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="美容・エステ業界向けに、美と変化を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            美容・エステ業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="旅行・観光業界向けに、体験と思い出を重視したコピーに変更してください" onclick="togglePrompt(this)">
+            旅行・観光業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="製造業向けに、品質と効率を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            製造業向け
+        </button>
+        <button class="prompt-btn" data-prompt="小売業向けに、品揃えと利便性を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            小売業向け
+        </button>
+        <button class="prompt-btn" data-prompt="コンサルティング業界向けに、専門性と成果を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            コンサルティング業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="フィットネス業界向けに、健康と達成感を重視したコピーに変更してください" onclick="togglePrompt(this)">
+            フィットネス業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="法律業界向けに、信頼と実績を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            法律業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="農業・食品業界向けに、安全性と品質を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            農業・食品業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="エンターテインメント業界向けに、楽しさと感動を重視したコピーに変更してください" onclick="togglePrompt(this)">
+            エンタメ業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="建設・建築業界向けに、安全性と実績を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            建設・建築業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="物流・運送業界向けに、スピードと確実性を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            物流・運送業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="人材・採用業界向けに、キャリアと成長を重視したコピーに変更してください" onclick="togglePrompt(this)">
+            人材・採用業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="ペット業界向けに、愛情とケアを強調したコピーに変更してください" onclick="togglePrompt(this)">
+            ペット業界向け
+        </button>
+        <button class="prompt-btn" data-prompt="環境・エコ業界向けに、持続可能性と未来を強調したコピーに変更してください" onclick="togglePrompt(this)">
+            環境・エコ業界向け
+        </button>
+    </div>
+</div>

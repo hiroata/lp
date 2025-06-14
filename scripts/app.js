@@ -9,6 +9,75 @@
 // API CONFIGURATION FUNCTIONS
 // ================================
 
+// Current selected provider
+let currentProvider = 'openai';
+
+// Provider configurations
+const providerConfigs = {
+  openai: {
+    name: 'OpenAI',
+    icon: '🤖',
+    model: 'gpt-4o',
+    endpoint: 'https://api.openai.com/v1/chat/completions',
+    keyPrefix: 'sk-',
+    placeholder: ''
+  },
+  anthropic: {
+    name: 'Anthropic',
+    icon: '🧠',
+    model: 'claude-sonnet-4-20250514',  // Claude 4 Sonnet
+    endpoint: 'https://api.anthropic.com/v1/messages',
+    keyPrefix: 'sk-ant-',
+    placeholder: ''
+  },
+  grok: {
+    name: 'Grok',
+    icon: '🚀',
+    model: 'grok-3-latest',
+    endpoint: 'https://api.x.ai/v1/chat/completions',
+    keyPrefix: 'xai-',
+    placeholder: ''
+  },
+  deepseek: {
+    name: 'DeepSeek',
+    icon: '🔍',
+    model: 'deepseek-r1',  // DeepSeek R1 Reasoner
+    endpoint: 'https://api.deepseek.com/v1/chat/completions',
+    keyPrefix: 'sk-',
+    placeholder: ''
+  }
+};
+
+// Select provider tab
+function selectProvider(provider) {
+  currentProvider = provider;
+  
+  // Update tabs
+  document.querySelectorAll('.provider-tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+  event.target.classList.add('active');
+  
+  // Show/hide configs
+  document.querySelectorAll('.provider-config').forEach(config => {
+    config.style.display = 'none';
+  });
+  document.getElementById(`${provider}Config`).style.display = 'block';
+  
+  // Update status based on saved key
+  checkProviderStatus(provider);
+}
+
+// Check if provider has saved API key
+function checkProviderStatus(provider) {
+  const apiKey = sessionStorage.getItem(`TEMP_${provider.toUpperCase()}_API_KEY`);
+  if (apiKey) {
+    updateApiStatus('success', '✅', `${providerConfigs[provider].name} APIキーが設定されています`);
+  } else {
+    updateApiStatus('info', '⚠️', `${providerConfigs[provider].name} APIキーを入力してください`);
+  }
+}
+
 // Set default API key from the development guide
 function setDefaultApiKey() {
   const apiKeyInput = document.getElementById('grokApiKeyInput');
@@ -73,116 +142,73 @@ function saveApiKey() {
   }
 }
 
-// Test API connection
-async function testApiConnection(event) {
-  const apiKeyInput = document.getElementById('grokApiKeyInput');
-  const apiKey = apiKeyInput?.value?.trim();
+// Save all API keys
+function saveAllApiKeys() {
+  let savedCount = 0;
+  
+  for (const provider of Object.keys(providerConfigs)) {
+    const input = document.getElementById(`${provider}ApiKeyInput`);
+    const apiKey = input?.value?.trim();
+    
+    if (apiKey) {
+      const config = providerConfigs[provider];
+      
+      // Validate key prefix
+      if (!apiKey.startsWith(config.keyPrefix)) {
+        showTestResult('error', `${config.name} APIキーは "${config.keyPrefix}" で始まる必要があります`);
+        continue;
+      }
+      
+      // Save to sessionStorage
+      sessionStorage.setItem(`TEMP_${provider.toUpperCase()}_API_KEY`, apiKey);
+      savedCount++;
+      
+      // Clear input and update placeholder
+      input.value = '';
+      input.placeholder = `${apiKey.substring(0, 10)}... (一時保存中)`;
+    }
+  }
+  
+  if (savedCount > 0) {
+    updateApiStatus('success', '✅', `${savedCount}個のAPIキーが一時保存されました`);
+    showTestResult('success', `${savedCount}個のAPIキーが保存されました。ページリロード時に消去されます。`);
+  } else {
+    updateApiStatus('info', '⚠️', 'APIキーが入力されていません');
+    showTestResult('error', '保存するAPIキーを入力してください');
+  }
+}
+
+// Test API connection for any provider
+async function testApiConnection(provider) {
+  console.log(`🔍 Testing API connection for provider: ${provider}`);
+  
+  // Get API key from session storage (new auto-detect system)
+  const apiKey = sessionStorage.getItem(`TEMP_${provider.toUpperCase()}_API_KEY`);
+  
+  console.log(`🔍 API key from session storage: ${!!apiKey}`);
   
   if (!apiKey) {
-    updateApiStatus('error', '❌', 'APIキーが入力されていません');
-    showTestResult('error', 'APIキーを入力してください');
-    return;
+    console.error(`❌ No API key found in session storage for ${provider}`);
+    throw new Error(`APIキーが設定されていません: ${provider}`);
   }
   
-  if (!apiKey.startsWith('xai-')) {
-    updateApiStatus('error', '❌', 'APIキーの形式が正しくありません');
-    showTestResult('error', 'Grok APIキーは "xai-" で始まる必要があります');
-    return;
+  const config = providerConfigs[provider];
+  
+  if (!config) {
+    console.error(`Provider config not found for: ${provider}`);
+    throw new Error(`設定が見つかりません: ${provider}`);
   }
   
-  const testResult = document.getElementById('testResult');
-  const testButton = event ? event.target : document.querySelector('button[onclick*="testApiConnection"]');
-  
-  try {
-    // Disable button during test
-    testButton.disabled = true;
-    testButton.textContent = '🔄 テスト中...';
-    
-    // Show testing status
-    updateApiStatus('info', '🔄', 'API接続をテスト中...');
-    showTestResult('testing', 'Grok APIに接続しています...');
-    
-    // Save original key to restore if test fails
-    const originalKey = window.envLoader?.get('GROK_API_KEY') || localStorage.getItem('GROK_API_KEY');
-    
-    // Temporarily set the test key
-    if (window.envLoader) {
-      window.envLoader.set('GROK_API_KEY', apiKey);
-    } else {
-      localStorage.setItem('GROK_API_KEY', apiKey);
-    }
-    
-    // Create new AI service instance for testing
-    const aiService = new window.AIService();
-    
-    // Test with a simple prompt
-    const testPrompt = "Test connection. Reply with 'OK' only.";
-    const result = await aiService.callGrok(testPrompt, { 
-      maxTokens: 50,
-      temperature: 0.1
-    });
-    
-    // Success!
-    updateApiStatus('success', '✅', `API接続成功 (モデル: ${result.model || 'grok-3-latest'})`);
-    showTestResult('success', `
-      <strong>接続成功!</strong><br>
-      モデル: ${result.model || 'grok-3-latest'}<br>
-      レスポンス: "${result.content?.substring(0, 50)}..."<br>
-      使用トークン: ${result.usage?.total_tokens || result.usage?.totalTokens || 'N/A'}
-    `);
-    
-    // Update button states since test passed
-    updateGenerationButtonStates(true);
-    
-  } catch (error) {
-    console.error('API connection test failed:', error);
-    
-    // Restore original key since test failed
-    if (originalKey) {
-      if (window.envLoader) {
-        window.envLoader.set('GROK_API_KEY', originalKey);
-      } else {
-        localStorage.setItem('GROK_API_KEY', originalKey);
-      }
-    } else {
-      // Remove the failed key
-      if (window.envLoader) {
-        window.envLoader.set('GROK_API_KEY', null);
-      }
-      localStorage.removeItem('GROK_API_KEY');
-    }
-    
-    let errorMessage = 'API接続に失敗しました';
-    let errorDetail = error.message;
-    
-    if (error.code === 'MISSING_API_KEY_GROK') {
-      errorMessage = 'APIキーが設定されていません';
-    } else if (error.details?.status === 401 || error.message.includes('401')) {
-      errorMessage = 'APIキーが無効です';
-      errorDetail = '正しいAPIキーを入力してください';
-    } else if (error.details?.status === 403 || error.message.includes('403')) {
-      errorMessage = 'APIキーの権限が不足しています';
-      errorDetail = 'APIキーの権限設定を確認してください';
-    } else if (error.details?.status === 429 || error.message.includes('429')) {
-      errorMessage = 'APIレート制限に達しています';
-      errorDetail = 'しばらく待ってから再試行してください';
-    } else if (error.name === 'TypeError' || error.message.includes('fetch') || error.code === 'NETWORK_ERROR_GROK') {
-      errorMessage = 'ネットワークエラー';
-      errorDetail = 'インターネット接続を確認してください';
-    }
-    
-    updateApiStatus('error', '❌', errorMessage);
-    showTestResult('error', `
-      <strong>接続失敗</strong><br>
-      ${errorMessage}<br>
-      <small>${errorDetail}</small>
-    `);
-    
-  } finally {
-    // Re-enable button
-    testButton.disabled = false;
-    testButton.textContent = '🧪 接続テスト';
+  if (!apiKey.startsWith(config.keyPrefix)) {
+    throw new Error(`${config.name} APIキーは "${config.keyPrefix}" で始まる必要があります`);
   }
+  
+  // Use AIService to test the connection
+  const aiService = new AIService();
+  await aiService.testConnection(provider);
+  
+  console.log(`✅ ${config.name} API connection test successful`);
+  return true;
 }
 
 // Show test result with proper styling
@@ -224,7 +250,11 @@ function updateApiStatus(type, indicator, text) {
   const indicatorElement = document.getElementById('statusIndicator');
   const textElement = document.getElementById('statusText');
   
-  if (!statusElement || !indicatorElement || !textElement) return;
+  // If elements don't exist (removed in UI), just log the status
+  if (!statusElement || !indicatorElement || !textElement) {
+    console.log(`API Status: ${indicator} ${text}`);
+    return;
+  }
   
   // Remove all status classes
   statusElement.className = 'api-status';
@@ -318,54 +348,45 @@ function updateGenerationButtonStates(hasValidKey) {
 
 // Update model status in the model selector
 function updateModelStatus() {
-  const grokCard = document.getElementById('grokCard');
-  const grokStatus = document.getElementById('grokStatus');
+  const providers = ['openai', 'anthropic', 'grok', 'deepseek'];
+  let firstAvailable = null;
   
-  if (!grokCard || !grokStatus) return;
-  
-  const apiKey = window.envLoader?.get('GROK_API_KEY') || localStorage.getItem('GROK_API_KEY');
-  const statusIndicator = grokStatus.querySelector('.status-indicator');
-  const statusText = grokStatus.querySelector('.status-text');
-  
-  if (apiKey) {
-    statusIndicator.className = 'status-indicator available';
-    statusText.textContent = '利用可能';
-    grokCard.classList.remove('disabled');
+  providers.forEach(provider => {
+    const card = document.getElementById(`${provider}Card`);
+    const status = document.getElementById(`${provider}Status`);
     
-    // Auto-select Grok if it's available and no model is selected
-    if (window.lpApp && window.lpApp.core && window.lpApp.core.aiService) {
-      const selectedModel = window.lpApp.core.aiService.getSelectedModel();
-      if (!selectedModel) {
-        window.lpApp.selectAIModel('grok');
+    if (!card || !status) return;
+    
+    const apiKey = sessionStorage.getItem(`TEMP_${provider.toUpperCase()}_API_KEY`) ||
+                   (provider === 'grok' ? window.envLoader?.get('GROK_API_KEY') || localStorage.getItem('GROK_API_KEY') : null);
+    const statusIndicator = status.querySelector('.status-indicator');
+    const statusText = status.querySelector('.status-text');
+    
+    if (apiKey) {
+      statusIndicator.className = 'status-indicator available';
+      statusText.textContent = '利用可能';
+      card.classList.remove('disabled');
+      
+      if (!firstAvailable) {
+        firstAvailable = provider;
       }
+    } else {
+      statusIndicator.className = 'status-indicator unavailable';
+      statusText.textContent = 'APIキー未設定';
+      card.classList.add('disabled');
     }
-  } else {
-    statusIndicator.className = 'status-indicator unavailable';
-    statusText.textContent = 'APIキー未設定';
-    grokCard.classList.add('disabled');
+  });
+  
+  // Auto-select first available model if no model is selected
+  if (firstAvailable && window.lpApp && window.lpApp.core && window.lpApp.core.aiService) {
+    const selectedModel = window.lpApp.core.aiService.getSelectedModel();
+    if (!selectedModel) {
+      window.lpApp.selectAIModel(firstAvailable);
+    }
   }
 }
 
-// Test error display (for development)
-function testErrorDisplay() {
-  if (!window.errorDisplay) return;
-  
-  // Create a test error
-  const testError = new ErrorWithDetails(
-    'これはテストエラーです',
-    'TEST_ERROR',
-    {
-      solution: 'これはエラー表示のテストです。',
-      timestamp: new Date().toISOString(),
-      testData: { example: 'value' }
-    }
-  );
-  
-  window.errorDisplay.addError(testError);
-}
 
-// Make test function available globally for debugging
-window.testErrorDisplay = testErrorDisplay;
 
 // File utility functions
 const FileUtils = {
@@ -1112,85 +1133,8 @@ class UIController {
     if (overlay) overlay.style.display = 'none';
   }
 
-  showError(message, details = null) {
-    // console.log('showError called:', { message, details });
-    
-    const toast = document.getElementById('errorToast');
-    const messageEl = document.getElementById('errorMessage');
-    if (messageEl) messageEl.textContent = message;
-    if (toast) {
-      toast.style.display = 'block';
-      
-      // Always create details if not provided
-      if (!details) {
-        details = {
-          message: message,
-          code: 'GENERAL_ERROR',
-          location: 'Unknown',
-          timestamp: new Date().toLocaleString(),
-          solution: '1. ページをリロードしてください\n2. しばらく待ってから再試行してください\n3. 問題が続く場合はブラウザのキャッシュをクリアしてください'
-        };
-      }
-      
-      // Store error details for click handler
-      toast.dataset.errorDetails = JSON.stringify(details);
-      toast.style.cursor = 'pointer';
-      toast.title = 'クリックで詳細を表示';
-      
-      // console.log('Error details stored:', details);
-    }
 
-    // Clear any existing timeout
-    if (this.errorTimeout) {
-      clearTimeout(this.errorTimeout);
-    }
 
-    // Auto-hide after 10 seconds instead of 5
-    this.errorTimeout = setTimeout(() => {
-      this.hideError();
-    }, 10000);
-  }
-
-  hideError() {
-    const toast = document.getElementById('errorToast');
-    if (toast) {
-      toast.style.display = 'none';
-      // Clear any existing timeout when manually hiding
-      if (this.errorTimeout) {
-        clearTimeout(this.errorTimeout);
-        this.errorTimeout = null;
-      }
-    }
-  }
-
-  // Show detailed error modal
-  showErrorDetails(errorDetails) {
-    // console.log('showErrorDetails called with:', errorDetails);
-    
-    const modal = document.getElementById('errorModal');
-    if (!modal) {
-      console.error('Error modal not found');
-      return;
-    }
-
-    // Populate error details
-    const messageEl = document.getElementById('errorDetailMessage');
-    const codeEl = document.getElementById('errorCode');
-    const locationEl = document.getElementById('errorLocation');
-    const timestampEl = document.getElementById('errorTimestamp');
-    const solutionEl = document.getElementById('errorSolution');
-
-    // console.log('Modal elements found:', { modal: !!modal, messageEl: !!messageEl, codeEl: !!codeEl, locationEl: !!locationEl, timestampEl: !!timestampEl, solutionEl: !!solutionEl });
-
-    if (messageEl) messageEl.textContent = errorDetails.message || 'エラーメッセージがありません';
-    if (codeEl) codeEl.textContent = errorDetails.code || 'エラーコードがありません';
-    if (locationEl) locationEl.textContent = errorDetails.location || '場所が特定できません';
-    if (timestampEl) timestampEl.textContent = errorDetails.timestamp || new Date().toLocaleString();
-    if (solutionEl) solutionEl.textContent = errorDetails.solution || '解決方法を調査中です';
-
-    modal.style.display = 'flex';
-    // console.log('Modal displayed');
-  }
 
   showSuccess(message) {
     const toast = document.createElement('div');
@@ -1228,16 +1172,42 @@ class UIController {
   }
 
   showSection(sectionId) {
+    console.log(`🔄 Switching to section: ${sectionId}`);
+    
+    // Hide all sections first
     const sections = document.querySelectorAll('section');
     sections.forEach(section => {
-      if (section.id !== 'uploadSection') {
-        section.style.display = 'none';
-      }
+      section.style.display = 'none';
     });
 
+    // Show the target section
     const targetSection = document.getElementById(sectionId);
     if (targetSection) {
       targetSection.style.display = 'block';
+      console.log(`✅ Section ${sectionId} is now visible`);
+      
+      // For generating section, ensure streaming display is visible
+      if (sectionId === 'generatingSection') {
+        setTimeout(() => {
+          const streamingDisplay = document.getElementById('streamingDisplay');
+          if (streamingDisplay) {
+            streamingDisplay.style.display = 'block';
+            streamingDisplay.style.opacity = '1';
+            streamingDisplay.style.visibility = 'visible';
+            console.log('✅ Streaming display visibility ensured');
+          }
+        }, 100);
+      }
+      
+      // For result section, ensure it's properly positioned
+      if (sectionId === 'resultSection') {
+        // Add a small delay to ensure DOM is ready
+        setTimeout(() => {
+          targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    } else {
+      console.error(`❌ Section ${sectionId} not found!`);
     }
   }
 
@@ -1265,6 +1235,449 @@ class UIController {
         step.classList.add('active');
       }
     });
+  }
+
+  // === リアルタイム生成表示機能 ===
+  
+  initStreamingDisplay() {
+    console.log('🌊 Initializing streaming display...');
+    
+    // ストリーミング表示用の要素を生成セクションに追加
+    const generatingSection = document.getElementById('generatingSection');
+    if (!generatingSection) {
+      console.error('❌ generatingSection not found!');
+      return;
+    }
+    
+    // generatingSectionを確実に表示
+    generatingSection.style.display = 'block';
+    
+    // 既存のストリーミング表示がある場合は再利用
+    let existingDisplay = document.getElementById('streamingDisplay');
+    if (existingDisplay) {
+      console.log('✅ Reusing existing streaming display');
+      existingDisplay.style.display = 'block';
+      existingDisplay.style.opacity = '1';
+      existingDisplay.style.visibility = 'visible';
+      // コンテンツをクリア
+      const textContent = document.getElementById('streamingTextContent');
+      if (textContent) {
+        textContent.innerHTML = '<div class="streaming-placeholder">AI生成を開始すると、ここにリアルタイムで内容が表示されます...</div>';
+      }
+      // 統計情報をリセット
+      this.streamingStats = {
+        startTime: Date.now(),
+        lastUpdateTime: Date.now(),
+        totalChars: 0,
+        currentSpeed: 0,
+        estimatedTotalChars: 8000,
+        activeTab: 'text'
+      };
+      return;
+    }
+    
+    const streamingDiv = document.createElement('div');
+    streamingDiv.id = 'streamingDisplay';
+    streamingDiv.className = 'streaming-display';
+    streamingDiv.style.display = 'block'; // 確実に表示
+    streamingDiv.style.marginTop = '2rem'; // 上部にマージンを追加
+    streamingDiv.innerHTML = `
+      <div class="streaming-header">
+        <h4>🌊 リアルタイム生成プレビュー</h4>
+        <div class="streaming-stats">
+          <span id="streamingWordCount">0文字</span>
+          <span id="streamingSpeed">0文字/秒</span>
+        </div>
+      </div>
+      <div class="streaming-tabs">
+        <button class="streaming-tab active" onclick="window.lpApp.uiController.switchStreamingTab('text')">📝 テキスト</button>
+        <button class="streaming-tab" onclick="window.lpApp.uiController.switchStreamingTab('html')">🌐 HTMLプレビュー</button>
+        <button class="streaming-tab" onclick="window.lpApp.uiController.switchStreamingTab('css')">🎨 CSSプレビュー</button>
+      </div>
+      <div class="streaming-content" id="streamingContent">
+        <div class="streaming-tab-content active" id="streamingTextContent">
+          <div class="streaming-placeholder">AI生成を開始すると、ここにリアルタイムで内容が表示されます...</div>
+        </div>
+        <div class="streaming-tab-content" id="streamingHtmlContent" style="display: none;">
+          <iframe class="streaming-preview-frame" id="streamingPreviewFrame"></iframe>
+        </div>
+        <div class="streaming-tab-content" id="streamingCssContent" style="display: none;">
+          <div class="css-preview-container">
+            <div class="css-code" id="streamingCssCode">CSSが生成されるとここに表示されます...</div>
+          </div>
+        </div>
+      </div>
+      <div class="streaming-progress">
+        <div class="streaming-progress-bar">
+          <div class="streaming-progress-fill" id="streamingProgressFill" style="width: 0%"></div>
+        </div>
+        <div class="streaming-time-info">
+          <span>経過時間: <span id="streamingElapsed">0秒</span></span>
+          <span>予想残り時間: <span id="streamingEta">計算中...</span></span>
+          <span>完了予定: <span id="streamingCompletion">計算中...</span></span>
+        </div>
+      </div>
+    `;
+    
+    // generation-containerの外側（後）に追加して確実に表示されるようにする
+    const generationContainer = generatingSection.querySelector('.generation-container');
+    if (generationContainer) {
+      // generation-containerの後に挿入
+      generationContainer.insertAdjacentElement('afterend', streamingDiv);
+      console.log('✅ Streaming display added after generation container');
+    } else {
+      // generation-containerがない場合は、generatingSectionの最後に追加
+      generatingSection.appendChild(streamingDiv);
+      console.log('✅ Streaming display added to generating section');
+    }
+    
+    // 強制的に表示を確保
+    streamingDiv.style.cssText = `
+      display: block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      margin: 2rem auto !important;
+      max-width: 1200px !important;
+      width: 95% !important;
+    `;
+    
+    // ストリーミング用の統計情報をリセット
+    this.streamingStats = {
+      startTime: Date.now(),
+      lastUpdateTime: Date.now(),
+      totalChars: 0,
+      currentSpeed: 0,
+      estimatedTotalChars: 8000, // 予想文字数
+      activeTab: 'text'
+    };
+    
+    // デバッグ: 要素が正しく追加されたか確認
+    const addedElement = document.getElementById('streamingDisplay');
+    if (addedElement) {
+      console.log('✅ Streaming display element found:', {
+        id: addedElement.id,
+        className: addedElement.className,
+        display: addedElement.style.display,
+        parentElement: addedElement.parentElement?.id || 'unknown'
+      });
+    } else {
+      console.error('❌ Streaming display element NOT found after insertion!');
+    }
+  }
+  
+  updateStreamingDisplay(chunk, fullContent) {
+    console.log('📝 Updating streaming display with chunk:', chunk.substring(0, 50) + '...');
+    
+    // ストリーミング表示がない場合は初期化
+    let streamingDisplay = document.getElementById('streamingDisplay');
+    if (!streamingDisplay) {
+      console.log('🆕 Streaming display not found, initializing...');
+      this.initStreamingDisplay();
+      streamingDisplay = document.getElementById('streamingDisplay');
+    }
+    
+    // 表示を確実に
+    if (streamingDisplay) {
+      streamingDisplay.style.display = 'block';
+      streamingDisplay.style.opacity = '1';
+      streamingDisplay.style.visibility = 'visible';
+    }
+    
+    const streamingContent = document.getElementById('streamingContent');
+    const streamingWordCount = document.getElementById('streamingWordCount');
+    const streamingSpeed = document.getElementById('streamingSpeed');
+    const streamingElapsed = document.getElementById('streamingElapsed');
+    const streamingEta = document.getElementById('streamingEta');
+    const streamingCompletion = document.getElementById('streamingCompletion');
+    const streamingProgressFill = document.getElementById('streamingProgressFill');
+    
+    if (!streamingContent) {
+      console.error('❌ streamingContent element not found!');
+      return;
+    }
+    
+    // 統計情報を更新
+    const now = Date.now();
+    const elapsed = (now - this.streamingStats.startTime) / 1000;
+    const timeSinceLastUpdate = (now - this.streamingStats.lastUpdateTime) / 1000;
+    const charsInChunk = chunk.length;
+    
+    this.streamingStats.totalChars += charsInChunk;
+    this.streamingStats.currentSpeed = timeSinceLastUpdate > 0 ? charsInChunk / timeSinceLastUpdate : 0;
+    this.streamingStats.lastUpdateTime = now;
+    
+    // 平均速度を計算
+    const avgSpeed = elapsed > 0 ? this.streamingStats.totalChars / elapsed : 0;
+    
+    // ETA（予想残り時間）を計算
+    const remainingChars = Math.max(0, this.streamingStats.estimatedTotalChars - this.streamingStats.totalChars);
+    const eta = avgSpeed > 0 ? remainingChars / avgSpeed : 0;
+    
+    // プログレスバーを更新
+    const progress = Math.min(100, (this.streamingStats.totalChars / this.streamingStats.estimatedTotalChars) * 100);
+    
+    // UI要素を更新
+    if (streamingWordCount) {
+      streamingWordCount.textContent = `${this.streamingStats.totalChars}文字`;
+    }
+    
+    if (streamingSpeed) {
+      streamingSpeed.textContent = `${Math.round(avgSpeed)}文字/秒`;
+    }
+    
+    if (streamingElapsed) {
+      streamingElapsed.textContent = `${Math.round(elapsed)}秒`;
+    }
+    
+    if (streamingEta) {
+      if (eta > 0 && eta < 300) { // 5分以内の場合のみ表示
+        streamingEta.textContent = `約${Math.round(eta)}秒`;
+      } else {
+        streamingEta.textContent = '計算中...';
+      }
+    }
+    
+    if (streamingCompletion) {
+      if (eta > 0 && eta < 300) {
+        const completionTime = new Date(now + eta * 1000);
+        streamingCompletion.textContent = completionTime.toLocaleTimeString();
+      } else {
+        streamingCompletion.textContent = '計算中...';
+      }
+    }
+    
+    if (streamingProgressFill) {
+      streamingProgressFill.style.width = `${progress}%`;
+    }
+    
+    // アクティブなタブに応じてコンテンツを更新
+    this.updateActiveStreamingTab(chunk, fullContent);
+  }
+  
+  // ストリーミングタブの切り替え
+  switchStreamingTab(tabType) {
+    // タブの切り替え
+    document.querySelectorAll('.streaming-tab').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    document.querySelectorAll('.streaming-tab-content').forEach(content => {
+      content.style.display = 'none';
+    });
+    
+    // アクティブなタブを設定
+    const activeTab = document.querySelector(`.streaming-tab[onclick*="'${tabType}'"]`);
+    const activeContent = document.getElementById(`streaming${tabType.charAt(0).toUpperCase() + tabType.slice(1)}Content`);
+    
+    if (activeTab) activeTab.classList.add('active');
+    if (activeContent) activeContent.style.display = 'block';
+    
+    this.streamingStats.activeTab = tabType;
+  }
+  
+  // アクティブなタブに応じてコンテンツを更新
+  updateActiveStreamingTab(chunk, fullContent) {
+    const activeTab = this.streamingStats.activeTab;
+    
+    if (activeTab === 'text') {
+      this.updateTextStreamingTab(chunk, fullContent);
+    } else if (activeTab === 'html') {
+      this.updateHtmlStreamingTab(fullContent);
+    } else if (activeTab === 'css') {
+      this.updateCssStreamingTab(fullContent);
+    }
+  }
+  
+  // テキストタブの更新
+  updateTextStreamingTab(chunk, fullContent) {
+    const textContent = document.getElementById('streamingTextContent');
+    if (!textContent) return;
+    
+    // プレースホルダーを削除
+    const placeholder = textContent.querySelector('.streaming-placeholder');
+    if (placeholder) {
+      placeholder.remove();
+    }
+    
+    // 新しいコンテンツを追加
+    const newContent = document.createElement('div');
+    newContent.className = 'streaming-chunk';
+    newContent.textContent = chunk;
+    textContent.appendChild(newContent);
+    
+    // スクロールを最下部に維持
+    textContent.scrollTop = textContent.scrollHeight;
+  }
+  
+  // HTMLプレビュータブの更新
+  updateHtmlStreamingTab(fullContent) {
+    const previewFrame = document.getElementById('streamingPreviewFrame');
+    if (!previewFrame) return;
+    
+    try {
+      // JSON形式の内容からHTMLを抽出
+      const jsonMatch = fullContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.code && parsed.code.html) {
+          const htmlContent = parsed.code.html;
+          const cssContent = parsed.code.css || '';
+          
+          // CSSを含む完全なHTMLを作成
+          const fullHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>${cssContent}</style>
+            </head>
+            <body>
+              ${htmlContent.replace(/<html[^>]*>|<\/html>|<head[^>]*>[\s\S]*?<\/head>|<body[^>]*>|<\/body>/gi, '')}
+            </body>
+            </html>
+          `;
+          
+          // iframeに内容を設定
+          previewFrame.srcdoc = fullHtml;
+        }
+      }
+    } catch (error) {
+      // JSON解析エラーの場合は、生のコンテンツをHTMLとして表示
+      previewFrame.srcdoc = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>body { font-family: sans-serif; padding: 20px; white-space: pre-wrap; }</style>
+        </head>
+        <body>${fullContent}</body>
+        </html>
+      `;
+    }
+  }
+  
+  // CSSプレビュータブの更新
+  updateCssStreamingTab(fullContent) {
+    const cssCode = document.getElementById('streamingCssCode');
+    if (!cssCode) return;
+    
+    try {
+      // JSON形式の内容からCSSを抽出
+      const jsonMatch = fullContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.code && parsed.code.css) {
+          cssCode.textContent = parsed.code.css;
+        } else {
+          cssCode.textContent = 'CSSコードが生成されるまでお待ちください...';
+        }
+      } else {
+        cssCode.textContent = 'CSS抽出中...';
+      }
+    } catch (error) {
+      cssCode.textContent = 'CSS解析中...';
+    }
+  }
+  
+  clearStreamingDisplay() {
+    const streamingContent = document.getElementById('streamingContent');
+    if (streamingContent) {
+      streamingContent.innerHTML = '<div class="streaming-placeholder">AIが応答を生成し始めると、ここにリアルタイムで表示されます...</div>';
+    }
+    
+    const charsCount = document.querySelector('.streaming-chars-count');
+    if (charsCount) {
+      charsCount.textContent = '0文字';
+    }
+    
+    const progressBar = document.getElementById('streamingProgressBar');
+    if (progressBar) {
+      progressBar.style.width = '0%';
+    }
+  }
+  
+  toggleStreamingDisplay() {
+    const streamingDisplay = document.getElementById('streamingDisplay');
+    if (streamingDisplay) {
+      const isVisible = streamingDisplay.style.display !== 'none';
+      streamingDisplay.style.display = isVisible ? 'none' : 'block';
+      
+      // ボタンのアイコンを更新
+      const toggleBtn = streamingDisplay.querySelector('.btn-icon');
+      if (toggleBtn) {
+        toggleBtn.textContent = isVisible ? '🙈' : '👁️';
+        toggleBtn.title = isVisible ? '表示する' : '非表示にする';
+      }
+    }
+  }
+  
+  showDetailedProgress(step, details) {
+    const statusText = document.getElementById('generationStatus');
+    if (statusText) {
+      statusText.innerHTML = `
+        <div class="detailed-progress">
+          <div class="progress-step">${step}</div>
+          <div class="progress-details">${details}</div>
+        </div>
+      `;
+    }
+  }
+
+  // 部分結果表示機能
+  showPartialResults(content, progress) {
+    // ストリーミング中にプレビューの一部を更新
+    try {
+      // JSONの一部が含まれているかチェック
+      if (content.includes('"html"') && content.includes('<')) {
+        const match = content.match(/"html":\s*"([^"]*(?:\\.[^"]*)*)/);
+        if (match) {
+          let htmlSnippet = match[1]
+            .replace(/\\n/g, '\n')
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\');
+          
+          // 部分的なHTMLでもプレビューを更新
+          if (htmlSnippet.length > 100) {
+            this.updatePartialPreview(htmlSnippet, progress);
+          }
+        }
+      }
+    } catch (error) {
+      console.log('部分結果解析エラー:', error);
+    }
+  }
+
+  updatePartialPreview(htmlSnippet, progress) {
+    const previewFrame = document.getElementById('previewFrame');
+    if (previewFrame) {
+      // 部分的なHTMLを表示用に補完
+      const partialHTML = `
+        <!DOCTYPE html>
+        <html lang="ja">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>プレビュー生成中...</title>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; padding: 20px; background: #f9f9f9; }
+            .preview-banner { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin-bottom: 20px; }
+            .content { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+          </style>
+        </head>
+        <body>
+          <div class="preview-banner">
+            <strong>🚧 生成プレビュー (${Math.round(progress)}%)</strong><br>
+            AIが生成中のコンテンツをリアルタイムでプレビューしています...
+          </div>
+          <div class="content">
+            ${htmlSnippet}
+          </div>
+        </body>
+        </html>
+      `;
+      
+      previewFrame.srcdoc = partialHTML;
+    }
   }
 
   displayUploadedFiles() {
@@ -1387,18 +1800,29 @@ class UIController {
   }
 
   displayGenerationResults() {
-    // Check both possible locations for generatedLP
-    const lp = this.app.core?.generatedLP || this.app.generatedLP;
+    // Check both possible locations for generatedLP - prioritize window.lpApp
+    const lp = window.lpApp?.core?.generatedLP || window.lpApp?.generatedLP || this.app?.core?.generatedLP || this.app?.generatedLP;
     console.log('🔍 DisplayGenerationResults:', {
       hasAppCore: !!this.app.core,
       hasAppGeneratedLP: !!this.app.generatedLP,
       hasCoreGeneratedLP: !!this.app.core?.generatedLP,
+      hasWindowLpAppCore: !!window.lpApp?.core?.generatedLP,
+      hasWindowLpApp: !!window.lpApp?.generatedLP,
       finalLP: !!lp,
       lpKeys: lp ? Object.keys(lp) : 'none'
     });
     
     if (!lp) {
-      console.warn('⚠️ No generatedLP found for display');
+      console.error('⚠️ No generatedLP found for display - checking all possible locations failed');
+      // Create a fallback LP if nothing is found
+      const fallbackLP = {
+        code: {
+          html: '<h1>LP生成エラー</h1><p>生成結果が見つかりませんでした</p>',
+          css: 'body { font-family: sans-serif; padding: 20px; }',
+          js: 'console.log("Fallback LP");'
+        }
+      };
+      this.updatePreview(fallbackLP);
       return;
     }
     
@@ -1435,11 +1859,6 @@ class UIController {
     this.updatePreview();
   }
 
-  // Alias method for backwards compatibility - fixes "displayResults is not a function" error
-  displayResults() {
-    console.log('⚠️ displayResults() called - this is deprecated, use displayGenerationResults() instead');
-    return this.displayGenerationResults();
-  }
 
   formatProposal(proposal) {
     let html = `<h3>${proposal.proposalTitle}</h3>`;
@@ -1473,8 +1892,16 @@ class UIController {
   }
 
   displayUsageSummary(usageData) {
+    console.log('📊 DisplayUsageSummary called with:', usageData);
     const summaryContent = document.getElementById('usageSummaryContent');
-    if (!summaryContent || !usageData) return;
+    if (!summaryContent) {
+      console.error('⚠️ usageSummaryContent element not found');
+      return;
+    }
+    if (!usageData) {
+      console.error('⚠️ No usage data provided');
+      return;
+    }
     
     const usage = usageData.usage || {};
     const inputTokens = usage.promptTokens || usage.prompt_tokens || 0;
@@ -1482,13 +1909,18 @@ class UIController {
     const totalTokens = usage.totalTokens || usage.total_tokens || (inputTokens + outputTokens) || 0;
     
     const modelIcon = {
-      'grok': '🚀'
+      'grok': '🚀',
+      'openai': '🤖',
+      'anthropic': '🧠',
+      'deepseek': '🔍'
     };
     
+    const modelName = usageData.model || usageData.service || 'unknown';
+    
     summaryContent.innerHTML = `
-      <div class="usage-summary-card ${usageData.model}">
+      <div class="usage-summary-card ${modelName}">
         <div class="usage-card-header">
-          <span class="usage-model-name">${usageData.model.toUpperCase()}</span>
+          <span class="usage-model-name">${modelName.toUpperCase()}</span>
           <span class="usage-model-icon">${modelIcon[usageData.model] || '🤖'}</span>
         </div>
         <div class="usage-stats">
@@ -1525,14 +1957,15 @@ class UIController {
     `;
   }
 
-  updatePreview() {
+  updatePreview(fallbackLP = null) {
     const previewFrame = document.getElementById('previewFrame');
     // Check both possible locations for generatedLP
-    const lp = this.app.core?.generatedLP || this.app.generatedLP;
+    const lp = fallbackLP || this.app.core?.generatedLP || this.app.generatedLP || window.lpApp?.core?.generatedLP || window.lpApp?.generatedLP;
     console.log('🔍 UpdatePreview:', {
       hasPreviewFrame: !!previewFrame,
       hasLP: !!lp,
-      lpCode: lp?.code ? 'exists' : 'missing'
+      lpCode: lp?.code ? 'exists' : 'missing',
+      isFallback: !!fallbackLP
     });
     
     if (!previewFrame || !lp) return;
@@ -1609,26 +2042,31 @@ class UIController {
     if (codeElement) {
       try {
         await navigator.clipboard.writeText(codeElement.value);
-        this.showSuccess(`${type.toUpperCase()} コードをコピーしました`);
+        // コピー成功（メッセージを簡略化）
       } catch (err) {
-        this.showError('コピーに失敗しました');
+        console.log('コピーに失敗しました');
       }
     }
   }
 
   updateAIUsageDisplay(model, status, usage, generationTime, responseSize, errorMessage) {
-    let usageDisplay = document.getElementById('aiUsageDisplay');
-    if (!usageDisplay) {
-      usageDisplay = document.createElement('div');
-      usageDisplay.id = 'aiUsageDisplay';
-      usageDisplay.className = 'ai-usage-display';
-      
-      const generatingSection = document.getElementById('generatingSection');
-      const generationContainer = generatingSection?.querySelector('.generation-container');
-      if (generationContainer) {
-        generationContainer.appendChild(usageDisplay);
-      }
+    // Only log to console, don't show confusing UI
+    console.log('🤖 AI Usage:', {
+      model,
+      status,
+      usage,
+      generationTime,
+      responseSize,
+      errorMessage
+    });
+    
+    // Remove any existing display to avoid confusion
+    const existingDisplay = document.getElementById('aiUsageDisplay');
+    if (existingDisplay) {
+      existingDisplay.remove();
     }
+    
+    return; // Don't show UI
 
     let statusIcon = '';
     let statusClass = '';
@@ -1724,8 +2162,6 @@ class UIController {
     const settingsPanel = document.getElementById('settingsPanel');
     if (settingsPanel) settingsPanel.classList.remove('open');
     
-    const errorModal = document.getElementById('errorModal');
-    if (errorModal) errorModal.style.display = 'none';
     
     const errorLogModal = document.getElementById('errorLogModal');
     if (errorLogModal) errorLogModal.style.display = 'none';
@@ -1803,7 +2239,7 @@ class FileUploadHandler {
     if (files.length === 0) return;
     
     if (this.app.uploadedFiles.length + files.length > 20) {
-      window.UIUtils.showError('最大20ファイルまでアップロード可能です');
+      console.log('最大20ファイルまでアップロード可能です');
       return;
     }
     
@@ -1813,7 +2249,7 @@ class FileUploadHandler {
       if (validation.isValid) {
         validFiles.push(file);
       } else {
-        window.UIUtils.showError(`${file.name}: ${validation.errors.join(', ')}`);
+        console.log(`${file.name}: ${validation.errors.join(', ')}`);
       }
     }
     
@@ -1872,7 +2308,7 @@ class FileUploadHandler {
         (failedCount > 0 ? `\n${failedCount}個のファイルでエラーが発生しました` : '')
       );
     } else {
-      window.UIUtils.showError('すべてのファイル処理に失敗しました');
+      console.log('すべてのファイル処理に失敗しました');
     }
     
     this.app.saveData();
@@ -1897,14 +2333,14 @@ class FileUploadHandler {
       this.app.uploadedFiles.splice(index, 1);
       this.app.uiController.displayUploadedFiles();
       this.app.saveData();
-      window.UIUtils.showSuccess('ファイルを削除しました');
+      // ファイル削除成功（メッセージを簡略化）
     }
   }
 
   viewFile(index) {
     const file = this.app.uploadedFiles[index];
     if (!file || !file.content) {
-      window.UIUtils.showError('ファイル内容を表示できません');
+      console.log('ファイル内容を表示できません');
       return;
     }
     
@@ -1952,7 +2388,7 @@ class FileUploadHandler {
     
     const fileInput = document.getElementById('fileInput');
     if (!fileInput || !fileInput.files) {
-      window.UIUtils.showError('元のファイルが見つかりません。再度アップロードしてください。');
+      console.log('元のファイルが見つかりません。再度アップロードしてください。');
       return;
     }
     
@@ -1965,7 +2401,7 @@ class FileUploadHandler {
     }
     
     if (!originalFile) {
-      window.UIUtils.showError('元のファイルが見つかりません。再度アップロードしてください。');
+      console.log('元のファイルが見つかりません。再度アップロードしてください。');
       return;
     }
     
@@ -1983,7 +2419,7 @@ class FileUploadHandler {
       fileEntry.processedAt = result.processedAt;
       
       window.UIUtils.hideLoading();
-      window.UIUtils.showSuccess('ファイルを正常に処理しました');
+      // ファイル処理成功（メッセージを簡略化）
       
     } catch (error) {
       console.error(`Retry error for ${fileEntry.fileName}:`, error);
@@ -1991,7 +2427,7 @@ class FileUploadHandler {
       fileEntry.error = error.message;
       
       window.UIUtils.hideLoading();
-      window.UIUtils.showError(`再処理エラー: ${error.message}`);
+      console.log(`再処理エラー: ${error.message}`);
     }
     
     this.updateFileItemStatus(index);
@@ -2031,7 +2467,7 @@ class AppCore {
       console.error('App initialization error:', error);
       setTimeout(() => {
         if (window.UIUtils) {
-          window.UIUtils.showError('アプリケーションの初期化に失敗しました');
+          console.log('アプリケーションの初期化に失敗しました');
         }
       }, 100);
     }
@@ -2115,9 +2551,9 @@ class AppCore {
     const availableServices = this.aiService.getAvailableServices();
     if (!availableServices.includes(model)) {
       if (model === 'claude-code') {
-        window.UIUtils.showError('Claude Codeは専用環境でのみ利用可能です');
+        console.log('Claude Codeは専用環境でのみ利用可能です');
       } else {
-        window.UIUtils.showError(`${model.toUpperCase()} APIキーが設定されていません。設定画面から入力してください。`);
+        console.log(`${model.toUpperCase()} APIキーが設定されていません。設定画面から入力してください。`);
       }
       return;
     }
@@ -2165,7 +2601,7 @@ class AppCore {
   async testSelectedModel() {
     const selectedModel = this.aiService.getSelectedModel();
     if (!selectedModel) {
-      window.UIUtils.showError('テストするモデルを選択してください');
+      console.log('テストするモデルを選択してください');
       return;
     }
     
@@ -2183,7 +2619,7 @@ class AppCore {
       
     } catch (error) {
       window.UIUtils.hideLoading();
-      window.UIUtils.showError(`${selectedModel} 接続テストエラー: ${error.message}`);
+      console.log(`${selectedModel} 接続テストエラー: ${error.message}`);
     }
   }
 
@@ -2326,7 +2762,7 @@ class AppCore {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
       this.saveData();
-      window.UIUtils.showSuccess('データを保存しました');
+      // データ保存成功（メッセージを簡略化）
     }
     
     if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
@@ -2416,18 +2852,18 @@ class LPGeneratorApp {
         console.log('Selected model after auto-selection:', selectedModel);
         
         if (!selectedModel) {
-          this.uiController.showError('モデルの選択に失敗しました。ページをリロードしてください。');
+          console.log('モデルの選択に失敗しました。ページをリロードしてください。');
           return;
         }
       } else {
-        this.uiController.showError('先にGrok APIキーを設定してください');
+        console.log('先にGrok APIキーを設定してください');
         return;
       }
     }
 
     let content = '';
     if (this.core.uploadedFiles.length === 0) {
-      this.uiController.showError('ファイルがアップロードされていません。クライアント資料をアップロードしてからLP生成を実行してください。');
+      console.log('ファイルがアップロードされていません。クライアント資料をアップロードしてからLP生成を実行してください。');
       return;
     } else {
       content = this.core.uploadedFiles
@@ -2462,7 +2898,45 @@ class LPGeneratorApp {
       
       this.uiController.updateProgress(75, 'AI応答を解析中...');
       
-      this.core.generatedLP = this.parseLPGenerationResult(result.content, selectedModel, result);
+      // Parse the result and ensure it's saved properly
+      let parsedResult = this.parseLPGenerationResult(result.content, selectedModel, result);
+      
+      // Ensure we have at least basic content
+      if (!parsedResult || !parsedResult.code || !parsedResult.code.html) {
+        console.warn('⚠️ Parsed result missing HTML, creating fallback');
+        parsedResult = {
+          code: {
+            html: this.generateBasicHTML(result.content || 'LP生成が完了しました'),
+            css: this.generateBasicCSS(),
+            js: ''
+          },
+          analysis: {
+            targetAudience: 'AI分析結果',
+            keyMessages: ['生成されたコンテンツ'],
+            designConcept: 'AIによる自動生成'
+          },
+          performance: {
+            expectedCvr: '評価中',
+            seoScore: '評価中',
+            speedScore: '評価中'
+          }
+        };
+      }
+      
+      this.core.generatedLP = parsedResult;
+      
+      // Also save to window.lpApp for backup
+      if (window.lpApp) {
+        window.lpApp.generatedLP = parsedResult;
+        window.lpApp.core.generatedLP = parsedResult;
+      }
+      
+      console.log('💾 Saved generatedLP:', {
+        hasCore: !!this.core.generatedLP,
+        hasAppCore: !!window.lpApp?.core?.generatedLP,
+        hasApp: !!window.lpApp?.generatedLP,
+        parsedKeys: Object.keys(parsedResult || {})
+      });
       
       // Save usage data for display
       this.core.lastUsageData = {
@@ -2479,14 +2953,54 @@ class LPGeneratorApp {
       
       this.uiController.updateProgress(90, '結果画面を準備中...');
       
+      // Force update preview before showing results
+      if (parsedResult && parsedResult.code && parsedResult.code.html) {
+        console.log('📄 Updating preview with generated HTML');
+        // updatePreview will use the generatedLP we just saved
+        this.uiController.updatePreview();
+      }
+      
       this.uiController.displayGenerationResults();
       this.uiController.displayUsageSummary(this.core.lastUsageData);
-      this.uiController.showSection('resultSection');
+      
+      // Ensure result section is shown with delay for DOM update
+      console.log('🎯 Showing result section...');
+      setTimeout(() => {
+        // Hide generating section and other sections first
+        const generatingSection = document.getElementById('generatingSection');
+        if (generatingSection) {
+          generatingSection.style.display = 'none';
+        }
+        
+        // Also hide API config and prompt sections
+        const apiConfigSection = document.getElementById('apiConfigSection');
+        if (apiConfigSection) {
+          apiConfigSection.style.display = 'none';
+        }
+        
+        const promptSection = document.getElementById('promptSelectionSection');
+        if (promptSection) {
+          promptSection.style.display = 'none';
+        }
+        
+        this.uiController.showSection('resultSection');
+        // Double-check visibility
+        const resultSection = document.getElementById('resultSection');
+        if (resultSection) {
+          resultSection.style.display = 'block';
+          console.log('✅ Result section displayed');
+          
+          // Scroll to result section
+          resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          console.error('❌ Result section element not found!');
+        }
+      }, 300);
       
       this.uiController.updateProgress(95, '最終チェック中...');
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      this.uiController.updateProgress(100, 'LP生成完了！');
+      this.uiController.updateProgress(90, 'LP生成完了！');
       
       const successMessage = `LP生成が完了しました！\n\n🤖 使用モデル: ${selectedModel.toUpperCase()}\n⏱️ 生成時間: ${(generationTime/1000).toFixed(1)}秒\n📝 応答サイズ: ${result.content?.length || 0} 文字`;
       this.uiController.showSuccess(successMessage);
@@ -2509,7 +3023,7 @@ class LPGeneratorApp {
         time: new Date().toISOString()
       });
       
-      this.uiController.showError(`LP生成エラー (${selectedModel}): ${error.message}`);
+      console.log(`LP生成エラー (${selectedModel}): ${error.message}`);
     }
   }
 
@@ -2690,7 +3204,7 @@ class LPGeneratorApp {
       });
       
       setTimeout(() => {
-        this.uiController.showError(`${model}の応答をJSONとして解析できませんでした。別のモデルを試してください。`);
+        console.log(`${model}の応答をJSONとして解析できませんでした。別のモデルを試してください。`);
       }, 1000);
       
       return {
@@ -2807,9 +3321,9 @@ h1 {
     const availableServices = this.core.aiService.getAvailableServices();
     if (!availableServices.includes(model)) {
       if (model === 'claude-code') {
-        this.uiController.showError('Claude Codeは専用環境でのみ利用可能です');
+        console.log('Claude Codeは専用環境でのみ利用可能です');
       } else {
-        this.uiController.showError(`${model.toUpperCase()} APIキーが設定されていません。設定画面から入力してください。`);
+        console.log(`${model.toUpperCase()} APIキーが設定されていません。設定画面から入力してください。`);
       }
       return;
     }
@@ -2863,7 +3377,7 @@ h1 {
     // Check both possible locations for generatedLP
     const lp = this.core?.generatedLP || this.generatedLP;
     if (!lp || !lp.code) {
-      this.uiController.showError('プレビューするLPがありません');
+      console.log('プレビューするLPがありません');
       return;
     }
     
@@ -2885,7 +3399,7 @@ h1 {
     // Check both possible locations for generatedLP
     const lp = this.core?.generatedLP || this.generatedLP;
     if (!lp || !lp.code) {
-      this.uiController.showError('ダウンロードするLPがありません');
+      console.log('ダウンロードするLPがありません');
       return;
     }
     
@@ -2912,7 +3426,7 @@ h1 {
       
     } catch (error) {
       console.error('Download error:', error);
-      this.uiController.showError('ダウンロードに失敗しました');
+      console.log('ダウンロードに失敗しました');
     }
   }
 
@@ -2920,7 +3434,7 @@ h1 {
     // Check both possible locations for generatedLP
     const lp = this.core?.generatedLP || this.generatedLP;
     if (!lp || !lp.proposal) {
-      this.uiController.showError('ダウンロードする提案資料がありません');
+      console.log('ダウンロードする提案資料がありません');
       return;
     }
     
@@ -2966,21 +3480,22 @@ h1 {
         this.core.selectAIModel(selectedModel.value);
       }
       
-      this.uiController.showSuccess('設定を一時保存しました（ページリロード時に消去）');
+      // 設定保存成功（メッセージを簡略化）
       this.toggleSettings();
     } else {
-      this.uiController.showError('有効なAPIキーを入力してください');
+      console.log('有効なAPIキーを入力してください');
     }
   }
 
   clearSettings() {
-    if (confirm('すべての設定をクリアしますか？')) {
+    // 設定をクリア（確認ダイアログを削除）
+    {
       StorageUtils.clearApiKeys();
       document.getElementById('grokApiKey').value = '';
       
       this.core.aiService.setSelectedModel(null);
       this.core.checkModelAvailability();
-      this.uiController.showSuccess('設定をクリアしました');
+      // 設定クリア成功（メッセージを簡略化）
     }
   }
 
@@ -2993,7 +3508,7 @@ h1 {
     const grokKey = document.getElementById('setupGrokKey')?.value || '';
     
     if (!grokKey) {
-      this.uiController.showError('Grok APIキーを入力してください');
+      console.log('Grok APIキーを入力してください');
       return;
     }
     
@@ -3004,7 +3519,7 @@ h1 {
     
     document.getElementById('setupModal').style.display = 'none';
     this.core.checkModelAvailability();
-    this.uiController.showSuccess('初期設定が完了しました（一時保存・ページリロード時に消去）');
+    // 初期設定完了（メッセージを簡略化）
   }
 }
 
@@ -3021,8 +3536,6 @@ window.ExportUtils = ExportUtils;
 window.UIUtils = {
   showLoading: (msg) => window.uiController?.showLoading(msg),
   hideLoading: () => window.uiController?.hideLoading(),
-  showError: (msg, details) => window.uiController?.showError(msg, details),
-  hideError: () => window.uiController?.hideError(),
   showSuccess: (msg) => window.uiController?.showSuccess(msg),
   showSection: (id) => window.uiController?.showSection(id),
   updateProgress: (p, m) => window.uiController?.updateProgress(p, m),
@@ -3039,13 +3552,14 @@ window.changeAIModel = changeAIModel;
 window.generateLPDirectly = generateLPDirectly;
 window.selectCopywriterStyle = selectCopywriterStyle;
 window.generateWithSelectedPrompts = generateWithSelectedPrompts;
-window.resetPromptSelection = resetPromptSelection;
 window.togglePrompt = togglePrompt;
 window.clearSelectedPrompts = clearSelectedPrompts;
 window.showSelectedPrompts = showSelectedPrompts;
 window.sendImprovementRequest = sendImprovementRequest;
+window.togglePrompt = togglePrompt;
+window.clearSelectedPrompts = clearSelectedPrompts;
+window.showSelectedPrompts = showSelectedPrompts;
 window.clearImprovementForm = clearImprovementForm;
-window.hideError = () => window.lpApp?.uiController?.hideError();
 
 function removeFile(index) {
   window.lpApp?.removeFile(index);
@@ -3080,74 +3594,19 @@ function selectAndGenerate(refId) {
 }
 
 function generateVariations() {
-  window.UIUtils.showError('バリエーション生成機能は開発中です');
+  console.log('バリエーション生成機能は開発中です');
 }
 
-function closeErrorModal() {
-  const modal = document.getElementById('errorModal');
-  if (modal) modal.style.display = 'none';
-}
 
-function copyErrorCode() {
-  const codeEl = document.getElementById('errorCode');
-  if (codeEl) {
-    navigator.clipboard.writeText(codeEl.textContent).then(() => {
-      window.UIUtils.showSuccess('エラーコードをコピーしました');
-    }).catch(() => {
-      window.UIUtils.showError('コピーに失敗しました');
-    });
-  }
-}
 
-function copyFullError() {
-  const modal = document.getElementById('errorModal');
-  if (!modal) return;
-  
-  const messageEl = document.getElementById('errorDetailMessage');
-  const codeEl = document.getElementById('errorCode');
-  const locationEl = document.getElementById('errorLocation');
-  const timestampEl = document.getElementById('errorTimestamp');
-  const solutionEl = document.getElementById('errorSolution');
-  
-  const errorText = `
-エラー詳細:
-メッセージ: ${messageEl?.textContent || 'N/A'}
-エラーコード: ${codeEl?.textContent || 'N/A'}
-発生場所: ${locationEl?.textContent || 'N/A'}
-時刻: ${timestampEl?.textContent || 'N/A'}
-推奨対処法: ${solutionEl?.textContent || 'N/A'}
-  `.trim();
-  
-  navigator.clipboard.writeText(errorText).then(() => {
-    window.UIUtils.showSuccess('エラー情報全体をコピーしました');
-  }).catch(() => {
-    window.UIUtils.showError('コピーに失敗しました');
-  });
-}
 
-// Test function for error modal
-function testErrorModal() {
-  const testDetails = {
-    message: 'これはテスト用のエラーメッセージです',
-    code: 'TEST_ERROR_001',
-    location: 'testErrorModal function',
-    timestamp: new Date().toLocaleString(),
-    solution: '1. これはテスト用なので実際の問題ではありません\n2. モーダルが正しく表示されることを確認\n3. コンソールログをチェック'
-  };
-  
-  if (window.lpApp && window.lpApp.uiController) {
-    window.lpApp.uiController.showError('テスト用エラー（クリックしてください）', testDetails);
-  } else {
-    console.error('UI Controller not available');
-  }
-}
 
 function improveLP() {
-  window.UIUtils.showError('改善提案機能は開発中です');
+  console.log('改善提案機能は開発中です');
 }
 
 function generateABTests() {
-  window.UIUtils.showError('A/Bテスト生成機能は開発中です');
+  console.log('A/Bテスト生成機能は開発中です');
 }
 
 function downloadAll() {
@@ -3353,7 +3812,7 @@ function clearSelectedPrompts() {
 function showSelectedPrompts() {
   const selectedArea = document.getElementById('selectedPromptsArea');
   if (window.selectedPrompts.length === 0) {
-    alert('まだプロンプトが選択されていません。');
+    console.log('プロンプトが未選択のためスキップ');
     return;
   }
   
@@ -3381,15 +3840,18 @@ async function sendImprovementRequest() {
   const textarea = document.getElementById('improvementRequest');
   const request = textarea?.value?.trim();
   
-  if (!request && window.selectedPrompts.length === 0) {
-    window.lpApp?.uiController?.showError('再生成する内容を入力するか、プロンプトを選択してください');
+  // selectedPromptsが存在しない場合は空配列として扱う
+  const selectedPrompts = window.selectedPrompts || [];
+  
+  if (!request && selectedPrompts.length === 0) {
+    console.log('再生成する内容を入力するか、プロンプトを選択してください');
     return;
   }
   
   // Combine selected prompts with manual input
   const allRequests = [];
-  if (window.selectedPrompts && window.selectedPrompts.length > 0) {
-    allRequests.push(...window.selectedPrompts);
+  if (selectedPrompts.length > 0) {
+    allRequests.push(...selectedPrompts);
   }
   if (request) {
     allRequests.push(request);
@@ -3399,11 +3861,16 @@ async function sendImprovementRequest() {
   // Check both possible locations for generatedLP
   const currentLP = window.lpApp?.core?.generatedLP || window.lpApp?.generatedLP;
   if (!currentLP) {
-    window.lpApp?.uiController?.showError('再生成するLPが見つかりません。先にLPを生成してください。');
+    console.log('再生成するLPが見つかりません。先にLPを生成してください。');
     return;
   }
   
   try {
+    // Show streaming section with improvements
+    window.lpApp.uiController.showSection('generatingSection');
+    window.lpApp.uiController.initStreamingDisplay();
+    window.lpApp.uiController.updateProgress(10, 'AI分析を開始中...');
+    
     // Show loading state
     const sendBtn = document.querySelector('.regeneration-actions .btn-primary');
     const originalText = sendBtn?.textContent;
@@ -3421,8 +3888,12 @@ async function sendImprovementRequest() {
     // Create improvement prompt
     const improvementPrompt = createImprovementPrompt(finalRequest, currentLP, additionalContent);
     
-    // Send to AI
-    const result = await window.lpApp.core.aiService.generateLP(improvementPrompt);
+    window.lpApp.uiController.updateProgress(40, 'AIによる改善案生成中...');
+    
+    // Send to AI with streaming enabled
+    const result = await window.lpApp.core.aiService.generateLP(improvementPrompt, null, { stream: true });
+    
+    window.lpApp.uiController.updateProgress(80, '改善結果を処理中...');
     
     // Parse and update LP
     if (result.parsedContent) {
@@ -3433,22 +3904,29 @@ async function sendImprovementRequest() {
         performance: result.parsedContent.performance
       };
       
-      // Update display
-      window.lpApp.uiController.displayGenerationResults();
+      window.lpApp.uiController.updateProgress(100, '改善完了!');
       
-      // Add AI response to chat
-      addChatMessage('ai', '✅ LPを再生成しました！新しいバージョンがプレビューに反映されています。');
-      
-      // Clear form
-      clearImprovementForm();
+      // Update display after a brief delay
+      setTimeout(() => {
+        window.lpApp.uiController.displayGenerationResults();
+        window.lpApp.uiController.showSection('resultSection');
+        
+        // Add AI response to chat
+        addChatMessage('ai', '✅ LPを再生成しました！新しいバージョンがプレビューに反映されています。');
+        
+        // Clear form
+        clearImprovementForm();
+      }, 1000);
     } else {
       addChatMessage('ai', '❌ LP再生成中にエラーが発生しました。もう一度お試しください。');
+      window.lpApp.uiController.showSection('resultSection');
     }
     
   } catch (error) {
     console.error('Improvement request error:', error);
     addChatMessage('ai', `❌ エラー: ${error.message}`);
-    window.lpApp?.uiController?.showError(`LP再生成エラー: ${error.message}`);
+    console.log(`LP再生成エラー: ${error.message}`);
+    window.lpApp.uiController.showSection('resultSection');
   } finally {
     // Restore button state
     const sendBtn = document.querySelector('.regeneration-actions .btn-primary');
@@ -3479,12 +3957,19 @@ ${additionalContent ? `【追加資料】\n${additionalContent}` : ''}
 4. Dan Kennedy式のダイレクトレスポンスマーケティング手法を活用してください
 5. 改善後も8000文字以上の充実した内容を維持してください
 
+【CSSの重要な改善点】
+1. CTAボタンに必ず十分なmargin（上下最低40px以上）を設定
+2. P.S.セクションは独立したコンテナに配置し、margin-top: 60px以上を確保
+3. 全てのセクション間に適切な余白（margin: 40px 0以上）を設定
+4. 要素の重なりを防ぐため、z-indexの過度な使用を避ける
+5. モバイルレスポンシブ対応で、小さい画面でも要素が重ならないようにする
+
 必ず以下のJSON形式で応答してください：
 
 {
   "code": {
     "html": "改善されたHTML全体",
-    "css": "改善されたCSS全体", 
+    "css": "改善されたCSS全体（要素の重なりを防ぐ適切なmargin、padding、z-index設定を含む）", 
     "js": "改善されたJavaScript全体"
   },
   "analysis": {
@@ -3596,67 +4081,41 @@ function generateLPDirectly() {
   window.lpApp?.generateLPDirectly();
 }
 
-// Test API connection
-async function testApiConnection(model) {
-  const resultDiv = document.getElementById(`${model}TestResult`);
-  const apiKeyInput = document.getElementById(`${model}ApiKey`);
-  
-  if (!resultDiv) return;
-  
-  resultDiv.style.display = 'block';
-  resultDiv.className = 'test-result testing';
-  resultDiv.innerHTML = '🔄 接続テスト中...';
-  
-  const apiKey = apiKeyInput?.value?.trim();
-  
-  if (!apiKey) {
-    resultDiv.className = 'test-result error';
-    resultDiv.innerHTML = '❌ APIキーを入力してください';
-    return;
-  }
-  
-  try {
-    const keyName = `${model.toUpperCase()}_API_KEY`;
-    const originalKey = localStorage.getItem(keyName);
-    localStorage.setItem(keyName, apiKey);
-    
-    const result = await window.lpApp.core.aiService.testConnection(model);
-    
-    if (result.success !== false) {
-      resultDiv.className = 'test-result success';
-      resultDiv.innerHTML = `✅ 接続成功！<br>
-        <small>モデル: ${model}<br>
-        応答: "${result.content.substring(0, 50)}..."</small>`;
-      
-      window.lpApp.core.checkModelAvailability();
-    } else {
-      resultDiv.className = 'test-result error';
-      resultDiv.innerHTML = `❌ 接続失敗<br>
-        <small>エラー: ${result.error}</small>`;
-      
-      if (originalKey) {
-        localStorage.setItem(keyName, originalKey);
-      } else {
-        localStorage.removeItem(keyName);
-      }
-    }
-    
-  } catch (error) {
-    console.error('Test connection error:', error);
-    resultDiv.className = 'test-result error';
-    resultDiv.innerHTML = `❌ テストエラー<br>
-      <small>${error.message}</small>`;
-  }
-  
-  setTimeout(() => {
-    if (resultDiv.style.display !== 'none') {
-      resultDiv.style.display = 'none';
-    }
-  }, 10000);
-}
+// Test API connection (removed duplicate - using the main testApiConnection function instead)
 
 // Back to top (reset app) function
 function backToTop() {
+  // 生成中はリセットをブロック
+  if (window.isGenerating) {
+    alert('LP生成中です。完了するまでお待ちください。');
+    return;
+  }
+  
+  const generatingSection = document.getElementById('generatingSection');
+  if (generatingSection && generatingSection.style.display !== 'none') {
+    console.log('⚠️ 生成中はリセットできません');
+    return;
+  }
+  
+  // 確認ダイアログを表示
+  const confirmReset = confirm('本当に最初からやり直しますか？アップロードしたファイルや生成結果、APIキーは失われます。');
+  if (!confirmReset) {
+    return;
+  }
+  
+  // APIキーをクリア
+  sessionStorage.removeItem('TEMP_GROK_API_KEY');
+  sessionStorage.removeItem('TEMP_OPENAI_API_KEY');
+  sessionStorage.removeItem('TEMP_ANTHROPIC_API_KEY');
+  sessionStorage.removeItem('TEMP_DEEPSEEK_API_KEY');
+  
+  // API設定入力フィールドもクリア
+  const autoDetectInput = document.getElementById('autoDetectInput');
+  if (autoDetectInput) autoDetectInput.value = '';
+  
+  const grokApiKey = document.getElementById('grokApiKey');
+  if (grokApiKey) grokApiKey.value = '';
+  
   if (window.lpApp) {
     window.lpApp.core.uploadedFiles = [];
     window.lpApp.core.analysisData = null;
@@ -3689,7 +4148,7 @@ function backToTop() {
       behavior: 'smooth'
     });
     
-    window.lpApp.uiController.showSuccess('アプリを初期状態にリセットしました');
+    // アプリリセット成功（メッセージを簡略化）
   }
 }
 
@@ -3702,6 +4161,12 @@ function initBackToTop() {
   if (!backBtn) return;
 
   function toggleBackButton() {
+    // Hide button during generation
+    if (window.isGenerating) {
+      backBtn.classList.remove('visible');
+      return;
+    }
+    
     const currentSection = getCurrentActiveSection();
     
     if (currentSection !== 'uploadSection' || 
@@ -3757,62 +4222,9 @@ function initBackToTop() {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize error display system first
-  window.errorDisplay.init();
   
-  // Setup error toast click handler
-  const errorToast = document.getElementById('errorToast');
-  if (errorToast) {
-    errorToast.addEventListener('click', (e) => {
-      console.log('Error toast clicked:', e.target);
-      
-      // Don't trigger if clicking the close button
-      if (e.target.classList.contains('error-close')) {
-        console.log('Close button clicked, not showing details');
-        return;
-      }
-      
-      const errorDetails = errorToast.dataset.errorDetails;
-      console.log('Error details data:', errorDetails);
-      
-      if (errorDetails) {
-        try {
-          const details = JSON.parse(errorDetails);
-          console.log('Parsed error details:', details);
-          
-          // Direct access to showErrorDetails function
-          if (window.lpApp && window.lpApp.uiController && window.lpApp.uiController.showErrorDetails) {
-            window.lpApp.uiController.showErrorDetails(details);
-          } else {
-            console.error('UI Controller not available, showing alert instead');
-            alert(`エラー詳細:\n${details.message}\nコード: ${details.code}\n解決方法: ${details.solution}`);
-          }
-        } catch (error) {
-          console.error('Failed to parse error details:', error);
-          alert('エラー詳細の解析に失敗しました');
-        }
-      } else {
-        console.log('No error details available, showing basic modal');
-        // Show basic error modal even if no details
-        const basicDetails = {
-          message: errorToast.querySelector('#errorMessage')?.textContent || 'エラーが発生しました',
-          code: 'GENERAL_ERROR',
-          location: 'Unknown',
-          timestamp: new Date().toLocaleString(),
-          solution: 'ページをリロードして再試行してください'
-        };
-        
-        if (window.lpApp && window.lpApp.uiController && window.lpApp.uiController.showErrorDetails) {
-          window.lpApp.uiController.showErrorDetails(basicDetails);
-        } else {
-          console.error('UI Controller not available, showing alert instead');
-          alert(`エラー詳細:\n${basicDetails.message}\nコード: ${basicDetails.code}\n解決方法: ${basicDetails.solution}`);
-        }
-      }
-    });
-  } else {
-    console.error('Error toast element not found');
-  }
+  // Initialize global variables
+  window.selectedPrompts = window.selectedPrompts || [];
   
   window.lpApp = new LPGeneratorApp();
   window.lpApp.init();
@@ -3832,9 +4244,89 @@ document.addEventListener('DOMContentLoaded', () => {
   
   initBackToTop();
   
+  // Check for existing results immediately
+  setTimeout(() => {
+    console.log('🔍 Checking for any existing generation results...');
+    
+    // Check for stored LP data
+    const storedLP = window.lpApp?.core?.generatedLP || window.lpApp?.generatedLP;
+    if (storedLP) {
+      console.log('✅ Found existing generated LP!', storedLP);
+      
+      // Show the results
+      const resultSection = document.getElementById('resultSection');
+      if (resultSection) {
+        ['uploadSection', 'apiConfigSection', 'promptSelectionSection', 'generatingSection'].forEach(id => {
+          const section = document.getElementById(id);
+          if (section) section.style.display = 'none';
+        });
+        
+        resultSection.style.display = 'block';
+        window.lpApp.uiController.displayGenerationResults();
+        window.lpApp.uiController.displayUsageSummary(storedLP);
+        console.log('✅ Existing results displayed!');
+      }
+    } else {
+      console.log('⚠️ No existing results found');
+    }
+  }, 500);
+  
   // Setup debug helpers after app initialization
   setTimeout(() => {
     window.debugLP = {
+      recoverResults() {
+        console.log('🔍 手動復旧を試行中...');
+        
+        // Check all possible storage locations
+        const locations = {
+          'core.generatedLP': window.lpApp?.core?.generatedLP,
+          'generatedLP': window.lpApp?.generatedLP,
+          'core.lastRawResponse': window.lpApp?.core?.lastRawResponse
+        };
+        
+        Object.entries(locations).forEach(([name, data]) => {
+          if (data) {
+            console.log(`✅ Found data in ${name}:`, data);
+            
+            // If it's a raw response, create a basic LP
+            if (data.content && !data.code) {
+              const basicLP = {
+                code: {
+                  html: `<!DOCTYPE html>\n<html lang="ja">\n<head>\n    <meta charset="UTF-8">\n    <title>復旧された生成結果</title>\n    <style>body{font-family:sans-serif;padding:20px;background:#f5f5f5}.content{background:white;padding:20px;border-radius:5px}pre{white-space:pre-wrap}</style>\n</head>\n<body>\n    <div class="content">\n        <h1>復旧されたAI応答</h1>\n        <pre>${data.content}</pre>\n    </div>\n</body>\n</html>`,
+                  css: '',
+                  js: ''
+                },
+                service: 'grok',
+                model: 'grok-3-latest',
+                usage: data.usage || {},
+                isRecovered: true
+              };
+              
+              window.lpApp.core.generatedLP = basicLP;
+              window.lpApp.generatedLP = basicLP;
+              console.log('✅ Basic LP created from raw response');
+            }
+            
+            // Display results
+            const resultSection = document.getElementById('resultSection');
+            if (resultSection) {
+              ['uploadSection', 'apiConfigSection', 'promptSelectionSection', 'generatingSection'].forEach(id => {
+                const section = document.getElementById(id);
+                if (section) section.style.display = 'none';
+              });
+              
+              resultSection.style.display = 'block';
+              window.lpApp.uiController.displayGenerationResults();
+              window.lpApp.uiController.displayUsageSummary(data);
+              console.log('✅ Results recovered and displayed!');
+            }
+            return;
+          }
+        });
+        
+        console.log('⚠️ No recoverable data found');
+      },
+      
       showLastResponse() {
         if (window.lpApp.core.lastRawResponse) {
           console.log('=== 最新のAI応答 ===');
@@ -3844,14 +4336,6 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('応答内容:');
           console.log(window.lpApp.core.lastRawResponse.content);
           console.log('===================');
-          
-          const debugInfo = `モデル: ${window.lpApp.core.lastRawResponse.model}\n時刻: ${window.lpApp.core.lastRawResponse.timestamp}\n使用量: ${JSON.stringify(window.lpApp.core.lastRawResponse.usage, null, 2)}\n\n応答内容:\n${window.lpApp.core.lastRawResponse.content}`;
-          
-          navigator.clipboard.writeText(debugInfo).then(() => {
-            console.log('✅ デバッグ情報がクリップボードにコピーされました');
-          }).catch(() => {
-            console.log('❌ クリップボードへのコピーに失敗しました');
-          });
           
           return window.lpApp.core.lastRawResponse;
         } else {
@@ -3899,64 +4383,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // ================================
 
 // Store selected options
-window.selectedCopywriterStyles = ['dan-kennedy']; // 複数選択対応に変更
-window.selectedCopywriterStyle = 'dan-kennedy'; // 後方互換性のため残す
+window.selectedCopywriterStyles = ['david-ogilvy']; // 複数選択対応に変更
+window.selectedCopywriterStyle = 'david-ogilvy'; // 後方互換性のため残す
 
 // Copywriter style definitions
 const copywriterStyles = {
-  'dan-kennedy': {
-    name: 'ダン・ケネディ',
-    instructions: `あなたはダン・ケネディの直接反応マーケティングスタイルをマスターしたコピーライターです。以下の原則を必ず守ってください：
-
-【ダン・ケネディスタイルの特徴】
-- 強烈な問題意識と恐怖訴求
-- 今すぐ行動しないと損をするという緊急性
-- 具体的な数字と証拠を多用
-- 読者の感情を強く揺さぶる
-- 権威性と信頼性の確立
-- リスクリバーサル（返金保証など）
-- 限定性と希少性の強調
-- P.S.での最後の一押し`
-  },
-  'gary-halbert': {
-    name: 'ゲイリー・ハルバート',
-    instructions: `あなたはゲイリー・ハルバートのストーリーテリングスタイルをマスターしたコピーライターです。以下の原則を必ず守ってください：
-
-【ゲイリー・ハルバートスタイルの特徴】
-- 魅力的なストーリーで読者を引き込む
-- 感情的なつながりを重視
-- 具体的な結果と体験談
-- 読みやすい会話調の文体
-- 読者との共感を築く
-- 実際の体験に基づいた信憑性
-- シンプルで力強いメッセージ`
-  },
-  'john-carlton': {
-    name: 'ジョン・カールトン',
-    instructions: `あなたはジョン・カールトンのアグレッシブなスタイルをマスターしたコピーライターです。以下の原則を必ず守ってください：
-
-【ジョン・カールトンスタイルの特徴】
-- 挑発的で注意を引くヘッドライン
-- 競合を意識した差別化訴求
-- 直接的で遠慮のない表現
-- 読者の現状に対する不満を刺激
-- 強烈なインパクトと記憶に残るフレーズ
-- 業界の常識を覆す視点
-- アクション志向の強いCTA`
-  },
-  'eugene-schwartz': {
-    name: 'ユージーン・シュワルツ',
-    instructions: `あなたはユージーン・シュワルツの心理学的アプローチをマスターしたコピーライターです。以下の原則を必ず守ってください：
-
-【ユージーン・シュワルツスタイルの特徴】
-- 読者の心理状態を深く理解した訴求
-- 段階的な説得プロセス
-- 論理的で体系的な構成
-- 潜在的な欲求を顕在化させる
-- 科学的根拠と理論的説明
-- 読者の成熟度に合わせたメッセージ
-- 長期的な信頼関係の構築`
-  },
   'david-ogilvy': {
     name: 'デイビッド・オグルビー',
     instructions: `あなたはデイビッド・オグルビーのブランド重視スタイルをマスターしたコピーライターです。以下の原則を必ず守ってください：
@@ -3969,19 +4400,6 @@ const copywriterStyles = {
 - 長期的なブランド価値の構築
 - 上品で知的な印象
 - 誠実さと透明性の重視`
-  },
-  'claude-hopkins': {
-    name: 'クロード・ホプキンス',
-    instructions: `あなたはクロード・ホプキンスの科学的広告スタイルをマスターしたコピーライターです。以下の原則を必ず守ってください：
-
-【クロード・ホプキンススタイルの特徴】
-- データと実績に基づいた訴求
-- 測定可能な結果を重視
-- A/Bテストを前提とした構成
-- 無駄を省いた効率的なコピー
-- ROIを重視したメッセージ
-- 科学的根拠による説得
-- 実証済みの手法の活用`
   },
   'robert-collier': {
     name: 'ロバート・コリアー',
@@ -4009,19 +4427,6 @@ const copywriterStyles = {
 - 技術的な優位性を平易に解説
 - 購入の正当性を理論的に提供`
   },
-  'haruki-murakami': {
-    name: '村上春樹風',
-    instructions: `あなたは村上春樹の文学的スタイルをマーケティングに応用するコピーライターです。以下の原則を必ず守ってください：
-
-【村上春樹風スタイルの特徴】
-- 静かで内省的な語り口
-- 日常の中の特別な瞬間を描写
-- 読者の想像力に委ねる余白
-- 淡々とした中に深い共感
-- 音楽や文学の引用を効果的に使用
-- 都会的で洗練された感性
-- 押し付けがましくない提案`
-  }
 };
 
 
@@ -4050,9 +4455,9 @@ function selectCopywriterStyle(element) {
     window.selectedCopywriterStyle = window.selectedCopywriterStyles[window.selectedCopywriterStyles.length - 1];
   } else {
     // 何も選択されていない場合はデフォルトに戻す
-    window.selectedCopywriterStyles = ['dan-kennedy'];
-    window.selectedCopywriterStyle = 'dan-kennedy';
-    document.querySelector('.copywriter-card[data-style="dan-kennedy"]').classList.add('selected');
+    window.selectedCopywriterStyles = ['david-ogilvy'];
+    window.selectedCopywriterStyle = 'david-ogilvy';
+    document.querySelector('.copywriter-card[data-style="david-ogilvy"]').classList.add('selected');
   }
   
   console.log('Selected copywriter styles:', window.selectedCopywriterStyles);
@@ -4072,60 +4477,37 @@ function updateSelectionCount() {
   }
 }
 
-// Select all copywriters
-function selectAllCopywriters() {
-  window.selectedCopywriterStyles = [];
-  document.querySelectorAll('.copywriter-card').forEach(card => {
-    card.classList.add('selected');
-    const style = card.dataset.style;
-    if (style && !window.selectedCopywriterStyles.includes(style)) {
-      window.selectedCopywriterStyles.push(style);
-    }
-  });
-  
-  window.selectedCopywriterStyle = window.selectedCopywriterStyles[0] || 'dan-kennedy';
-  console.log('All copywriters selected:', window.selectedCopywriterStyles);
-  updateSelectionCount();
-}
-
-
-// Reset all selections
-function resetPromptSelection() {
-  // Reset copywriter style to default
-  document.querySelectorAll('.copywriter-card').forEach(card => {
-    card.classList.remove('selected');
-  });
-  document.querySelector('.copywriter-card[data-style="dan-kennedy"]').classList.add('selected');
-  window.selectedCopywriterStyles = ['dan-kennedy'];
-  window.selectedCopywriterStyle = 'dan-kennedy';
-  updateSelectionCount();
-  window.selectedCopywriterStyle = 'dan-kennedy';
-  
-  console.log('Selection reset - Style:', window.selectedCopywriterStyle);
-}
 
 // Generate LP with selected prompts
 async function generateWithSelectedPrompts() {
   try {
     if (!window.lpApp) {
       console.error('LP App not initialized');
-      alert('アプリケーションが初期化されていません');
+      console.error('アプリケーション未初期化');
       return;
     }
     
-    // Check if API key is set
-    const apiKey = sessionStorage.getItem('TEMP_GROK_API_KEY') || 
-                   window.envLoader?.get('GROK_API_KEY') || 
-                   localStorage.getItem('GROK_API_KEY');
-    if (!apiKey) {
+    // Check if any API key is set (not just Grok)
+    const providers = ['GROK', 'OPENAI', 'ANTHROPIC', 'DEEPSEEK'];
+    let hasApiKey = false;
+    
+    for (const provider of providers) {
+      const apiKey = sessionStorage.getItem(`TEMP_${provider}_API_KEY`);
+      if (apiKey) {
+        hasApiKey = true;
+        break;
+      }
+    }
+    
+    if (!hasApiKey) {
       const errorDetails = {
-        message: '先にGrok APIキーを設定してください',
+        message: '先にAPIキーを設定してください',
         code: 'MISSING_API_KEY',
         location: 'generateWithSelectedPrompts function',
         timestamp: new Date().toLocaleString(),
-        solution: '1. 画面上部の「API設定」でGrok APIキーを入力してください\n2. APIキーが正しい形式（xai-で始まる）であることを確認してください\n3. APIキーに十分な残高があることを確認してください'
+        solution: '1. 画面上部の「API設定」でAPIキーを入力してください\n2. Grok、OpenAI、Anthropic、DeepSeekのいずれかのAPIキーが必要です'
       };
-      window.lpApp.uiController.showError('先にGrok APIキーを設定してください', errorDetails);
+      console.log('先にAPIキーを設定してください');
       return;
     }
     
@@ -4146,7 +4528,7 @@ async function generateWithSelectedPrompts() {
         timestamp: new Date().toLocaleString(),
         solution: '1. 6つのコピーライタースタイルから1つを選択してください\n2. ダン・ケネディ、ゲイリー・ハルバート、ジョン・カールトンなどから選べます\n3. 選択後に青色に変わることを確認してください'
       };
-      window.lpApp.uiController.showError('コピーライタースタイルが選択されていません', errorDetails);
+      console.log('コピーライタースタイルが選択されていません');
       return;
     }
     
@@ -4161,14 +4543,14 @@ async function generateWithSelectedPrompts() {
         timestamp: new Date().toLocaleString(),
         solution: '1. ページをリロードしてください\n2. 有効なコピーライタースタイルを再選択してください\n3. ブラウザのキャッシュをクリアしてください'
       };
-      window.lpApp.uiController.showError(`無効なコピーライタースタイルが選択されました: ${window.selectedCopywriterStyle}`, errorDetails);
+      console.log(`無効なコピーライタースタイルが選択されました: ${window.selectedCopywriterStyle}`);
       return;
     }
   
   // Check for uploaded files and use them if available
   let combinedContent = '';
   if (window.lpApp.core.uploadedFiles.length === 0) {
-    window.lpApp.uiController.showError('ファイルがアップロードされていません。クライアント資料をアップロードしてからLP生成を実行してください。');
+    console.log('ファイルがアップロードされていません。クライアント資料をアップロードしてからLP生成を実行してください。');
     return;
   } else {
     combinedContent = window.lpApp.core.uploadedFiles
@@ -4178,8 +4560,12 @@ async function generateWithSelectedPrompts() {
   }
   
     // Show generation section
+    console.log('🚀 Starting LP generation with style:', selectedStyle.name);
     window.lpApp.uiController.showSection('generatingSection');
     window.lpApp.uiController.updateProgress(0, `${selectedStyle.name}スタイルでLP生成を開始しています...`);
+    
+    // Set flag to prevent resets during generation
+    window.isGenerating = true;
 
     const startTime = Date.now();
     
@@ -4191,7 +4577,10 @@ async function generateWithSelectedPrompts() {
     window.lpApp.uiController.updateProgress(25, `${selectedStyle.name}のスタイル特性を適用中...`);
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    window.lpApp.uiController.updateAIUsageDisplay('grok', 'starting', 0, 0);
+    // Get the actual selected model
+    const selectedModel = window.lpApp.core.aiService.getSelectedModel() || 'unknown';
+    console.log('🎯 Using AI model:', selectedModel);
+    window.lpApp.uiController.updateAIUsageDisplay(selectedModel, 'starting', 0, 0);
 
     // Create custom prompt with selected style
     const customPrompt = `${selectedStyle.instructions}
@@ -4230,16 +4619,36 @@ ${combinedContent}
 
     // Progress step 3: Generating content
     window.lpApp.uiController.updateProgress(35, `${selectedStyle.name}流のコピーライティングを実行中...`);
+    window.lpApp.uiController.showDetailedProgress(
+      'AI分析中', 
+      `${selectedStyle.name}のスタイル特性を分析し、あなたの資料に最適なコピーライティングを準備しています...`
+    );
     
-    // Call AI service directly with custom prompt
-    const result = await window.lpApp.core.aiService.generateWithSelectedModel(customPrompt, { maxTokens: 16384 });
+    // Call AI service with timeout
+    console.log('🚀 Calling AI service...');
+    // ストリーミング表示は既に初期化済みなのでスキップ
+    
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('タイムアウト: AIサービスからの応答が5分でタイムアウトしました')), 300000); // 5 minutes
+    });
+    
+    // ストリーミング有効でAI呼び出し
+    const aiPromise = window.lpApp.core.aiService.generateWithSelectedModel(customPrompt, { 
+      maxTokens: 16384,
+      stream: true  // ストリーミングを有効化
+    });
+    
+    const result = await Promise.race([aiPromise, timeoutPromise]);
+    console.log('✅ AI service responded successfully');
     
     // Progress step 4: Processing AI response
     window.lpApp.uiController.updateProgress(65, 'AI応答を処理中...');
     
     const generationTime = Date.now() - startTime;
     
-    window.lpApp.uiController.updateAIUsageDisplay('grok', 'completed', result.usage, generationTime, result.content?.length);
+    // Get the actual model used from the result or the selected model
+    const usedModel = result.service || window.lpApp.core.aiService.getSelectedModel() || 'unknown';
+    window.lpApp.uiController.updateAIUsageDisplay(usedModel, 'completed', result.usage, generationTime, result.content?.length);
     
     window.lpApp.uiController.updateProgress(80, 'コンテンツ構造を解析中...');
     
@@ -4282,7 +4691,7 @@ ${combinedContent}
         parseError: parseError.message
       };
       
-      window.lpApp.uiController.showError(`JSON解析エラー: ${parseError.message}. フォールバックコンテンツで継続します。`, errorDetails);
+      console.log(`JSON解析エラー: ${parseError.message}. フォールバックコンテンツで継続します。`);
       
       // Enhanced fallback response with more content
       parsedContent = {
@@ -4348,10 +4757,11 @@ body {
     }
     
     // Store generated LP
+    const actualService = result.service || window.lpApp.core.aiService.getSelectedModel() || 'unknown';
     window.lpApp.core.generatedLP = {
       ...parsedContent,
-      service: 'grok',
-      model: result.model || 'grok-3-latest',
+      service: actualService,
+      model: result.model || window.lpApp.core.aiService.defaultModels[actualService] || 'unknown',
       usage: result.usage,
       generationTime: generationTime,
       responseSize: result.content?.length || 0,
@@ -4359,21 +4769,153 @@ body {
       copywriterStyle: selectedStyle.name
     };
     
-    window.lpApp.uiController.updateProgress(95, '最終チェックと最適化中...');
-    await new Promise(resolve => setTimeout(resolve, 300));
+    console.log('✅ Generation successful, preparing results...');
     
-    window.lpApp.uiController.updateProgress(100, 'LP生成完了！');
+    // Don't update progress to avoid UI confusion - keep at last progress level
     
-    // Wait a moment then show results
-    setTimeout(() => {
-      window.lpApp.uiController.showSection('resultSection');
+    // Store generatedLP in both places to ensure it's found
+    if (!window.lpApp.core.generatedLP) {
+      console.error('⚠️ generatedLP not stored in core!');
+    }
+    if (!window.lpApp.generatedLP) {
+      window.lpApp.generatedLP = window.lpApp.core.generatedLP;
+      console.log('🔄 Copied generatedLP to window.lpApp');
+    }
+    
+    // Show results immediately without delay
+    console.log('🎯 Preparing to show results...');
+    console.log('🔍 Checking generatedLP:', {
+      hasCore: !!window.lpApp.core.generatedLP,
+      hasCode: !!window.lpApp.core.generatedLP?.code,
+      codeKeys: window.lpApp.core.generatedLP?.code ? Object.keys(window.lpApp.core.generatedLP.code) : 'none'
+    });
+    
+    // Clear generation flag before showing results
+    window.isGenerating = false;
+    console.log('✅ Generation flag cleared');
+    
+    // Immediately show results without delay
+    console.log('🎯 Now showing results section...');
+    
+    // Hide generating section
+    const generatingSection = document.getElementById('generatingSection');
+    if (generatingSection) {
+      generatingSection.style.display = 'none';
+      console.log('❌ Hidden generating section');
+    }
+    
+    // Show result section immediately
+    const resultSection = document.getElementById('resultSection');
+    if (!resultSection) {
+      console.error('⚠️ Result section not found in DOM!');
+      return;
+    }
+    
+    console.log('✅ Found result section, making it visible...');
+    resultSection.style.display = 'block';
+    
+    // Display the results immediately
+    try {
+      console.log('📝 Calling displayGenerationResults...');
       window.lpApp.uiController.displayGenerationResults();
+      console.log('📊 Calling displayUsageSummary...');
       window.lpApp.uiController.displayUsageSummary(window.lpApp.core.generatedLP);
-    }, 1000);
+      console.log('✅ Display functions completed');
+      
+      // Scroll to results
+      resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      console.log('✅ Scrolled to result section');
+    } catch (displayError) {
+      console.error('⚠️ Error displaying results:', displayError);
+      console.error('Stack:', displayError.stack);
+      
+      // Force show basic content if there's an error
+      resultSection.innerHTML = `
+        <div style="padding: 40px; text-align: center;">
+          <h2>生成完了</h2>
+          <p>結果の表示中にエラーが発生しました。</p>
+          <p>コンソールを確認してください。</p>
+        </div>
+      `;
+    }
     
   } catch (error) {
     console.error('Error in generateWithSelectedPrompts:', error);
     console.error('Error stack:', error.stack);
+    
+    // Clear generation flag on error
+    window.isGenerating = false;
+    
+    // Save partial result if available
+    if (result && result.content) {
+      console.log('💾 Saving partial result before error...');
+      
+      // Try to show whatever content we got
+      const partialLP = {
+        code: {
+          html: `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>部分的な生成結果</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        .content { background: white; padding: 20px; border-radius: 5px; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <div class="warning">
+        <h2>⚠️ 生成中にエラーが発生しました</h2>
+        <p>以下は部分的な生成結果です。APIクレジットは消費されています。</p>
+        <p>エラー: ${error.message}</p>
+    </div>
+    <div class="content">
+        <h3>AIからの応答内容:</h3>
+        <pre>${result.content}</pre>
+    </div>
+</body>
+</html>`,
+          css: '',
+          js: ''
+        },
+        service: result.service || selectedModel,
+        model: result.model || 'unknown',
+        usage: result.usage,
+        generationTime: Date.now() - startTime,
+        responseSize: result.content?.length || 0,
+        timestamp: new Date().toISOString(),
+        isPartial: true,
+        error: error.message
+      };
+      
+      // Store partial result
+      window.lpApp.core.generatedLP = partialLP;
+      if (!window.lpApp.generatedLP) {
+        window.lpApp.generatedLP = partialLP;
+      }
+      
+      // Show result section with partial content
+      setTimeout(() => {
+        const generatingSection = document.getElementById('generatingSection');
+        if (generatingSection) {
+          generatingSection.style.display = 'none';
+        }
+        
+        window.lpApp.uiController.showSection('resultSection');
+        window.lpApp.uiController.displayGenerationResults();
+        window.lpApp.uiController.displayUsageSummary(partialLP);
+      }, 500);
+    }
+    
+    // Hide loading/generating UI
+    window.lpApp.uiController.hideLoading();
+    const generatingSection = document.getElementById('generatingSection');
+    if (generatingSection) {
+      generatingSection.style.display = 'none';
+    }
     
     // Detailed error information
     let errorMessage = 'LP生成中にエラーが発生しました';
@@ -4391,25 +4933,33 @@ body {
       errorType: error.constructor.name
     };
     
-    window.lpApp.uiController.showError(errorMessage, errorDetails);
-    window.lpApp.uiController.showSection('promptSelectionSection');
+    console.log(errorMessage);
+    console.error('Error details:', errorDetails);
     
-    // Reset progress bar
-    window.lpApp.uiController.updateProgress(0, 'エラーが発生しました');
+    // Show error message in UI
+    window.lpApp.uiController.updateProgress(0, `エラー: ${error.message || 'Unknown error'}`);
+    
+    // Return to prompt selection after delay
+    setTimeout(() => {
+      window.lpApp.uiController.showSection('promptSelectionSection');
+    }, 3000);
+  } finally {
+    // Always clear generation flag
+    window.isGenerating = false;
+    console.log('🎯 Generation process completed');
   }
 }
 
 // Update prompt button states based on API key
 function updatePromptButtonStates() {
-  const apiKey = sessionStorage.getItem('TEMP_GROK_API_KEY') || 
-                 window.envLoader?.get('GROK_API_KEY') || 
-                 localStorage.getItem('GROK_API_KEY');
-  const isValidKey = apiKey && apiKey.startsWith('xai-');
+  // Check if Grok API key is set
+  const apiKey = sessionStorage.getItem('TEMP_GROK_API_KEY');
+  const hasValidKey = !!(apiKey && apiKey.trim());
   
   const promptButton = document.getElementById('generateWithPromptsButton');
   if (promptButton) {
-    promptButton.disabled = !isValidKey;
-    if (!isValidKey) {
+    promptButton.disabled = !hasValidKey;
+    if (!hasValidKey) {
       promptButton.title = 'APIキーを設定してください';
       promptButton.style.opacity = '0.5';
       promptButton.style.cursor = 'not-allowed';
@@ -4427,7 +4977,7 @@ async function compareSelectedIntros() {
   
   // Check if files are uploaded
   if (!window.lpApp || !window.lpApp.core.uploadedFiles || window.lpApp.core.uploadedFiles.length === 0) {
-    window.lpApp.uiController.showError('ファイルがアップロードされていません。クライアント資料をアップロードしてから実行してください。');
+    console.log('ファイルがアップロードされていません。クライアント資料をアップロードしてから実行してください。');
     return;
   }
   
@@ -4437,7 +4987,7 @@ async function compareSelectedIntros() {
   
   const selectedStyles = window.selectedCopywriterStyles || [];
   if (selectedStyles.length === 0) {
-    window.lpApp.uiController.showError('コピーライタースタイルが選択されていません。');
+    console.log('コピーライタースタイルが選択されていません。');
     return;
   }
   
@@ -4445,6 +4995,8 @@ async function compareSelectedIntros() {
     // Show loading state
     window.lpApp.uiController.showSection('generatingSection');
     window.lpApp.uiController.updateProgress(0, `${selectedStyles.length}人の冒頭を生成中...`);
+    
+    // ストリーミング表示は比較モードでは不要
     
     // Get content from uploaded files
     const combinedContent = window.lpApp.core.uploadedFiles
@@ -4531,7 +5083,7 @@ async function compareSelectedIntros() {
     
   } catch (error) {
     console.error('Error in compareSelectedIntros:', error);
-    window.lpApp.uiController.showError('比較生成中にエラーが発生しました: ' + error.message);
+    console.log('比較生成中にエラーが発生しました: ' + error.message);
   }
 }
 
@@ -4541,7 +5093,7 @@ async function compareAllIntros() {
   
   // Check if files are uploaded
   if (!window.lpApp || !window.lpApp.core.uploadedFiles || window.lpApp.core.uploadedFiles.length === 0) {
-    window.lpApp.uiController.showError('ファイルがアップロードされていません。クライアント資料をアップロードしてから実行してください。');
+    console.log('ファイルがアップロードされていません。クライアント資料をアップロードしてから実行してください。');
     return;
   }
   
@@ -4638,7 +5190,7 @@ async function compareAllIntros() {
     
   } catch (error) {
     console.error('Error in compareAllIntros:', error);
-    window.lpApp.uiController.showError('比較生成中にエラーが発生しました: ' + error.message);
+    console.log('比較生成中にエラーが発生しました: ' + error.message);
   }
 }
 
@@ -4755,7 +5307,7 @@ async function generateFullLPFromComparison(styleKey, copywriterName) {
   // Get the style definition
   const selectedStyle = copywriterStyles[styleKey];
   if (!selectedStyle) {
-    window.lpApp.uiController.showError('選択されたスタイルが見つかりません');
+    console.log('選択されたスタイルが見つかりません');
     return;
   }
   
@@ -4816,8 +5368,13 @@ async function generateFullLPFromComparison(styleKey, copywriterName) {
     // Progress updates
     window.lpApp.uiController.updateProgress(20, 'AIに生成指示を送信中...');
     
-    // Call AI service
-    const result = await window.lpApp.core.aiService.generateWithSelectedModel(customPrompt, { maxTokens: 16384 });
+    // ストリーミング表示は別の箇所で初期化済み
+    
+    // Call AI service with streaming enabled
+    const result = await window.lpApp.core.aiService.generateWithSelectedModel(customPrompt, { 
+      maxTokens: 16384,
+      stream: true  // ストリーミングを有効化
+    });
     
     window.lpApp.uiController.updateProgress(60, 'AI応答を処理中...');
     
@@ -4884,7 +5441,9 @@ async function generateFullLPFromComparison(styleKey, copywriterName) {
     window.lpApp.core.generatedLP = parsedContent;
     
     // Update AI usage display
-    window.lpApp.uiController.updateAIUsageDisplay('grok', 'completed', result.usage, generationTime, result.content?.length);
+    // Get the actual model used from the result or the selected model
+    const usedModel = result.service || window.lpApp.core.aiService.getSelectedModel() || 'unknown';
+    window.lpApp.uiController.updateAIUsageDisplay(usedModel, 'completed', result.usage, generationTime, result.content?.length);
     
     window.lpApp.uiController.updateProgress(100, '完了！');
     
@@ -4919,12 +5478,26 @@ async function generateFullLPFromComparison(styleKey, copywriterName) {
       if (lpImprovementSection) lpImprovementSection.style.display = 'block';
     }
     
+    // Show result section explicitly
+    window.lpApp.uiController.showSection('resultSection');
+    
     // Update result display
     window.lpApp.uiController.displayGenerationResults();
     
+    // Force update preview
+    window.lpApp.uiController.updatePreview();
+    
+    // Force scroll to results
+    setTimeout(() => {
+      const resultSection = document.getElementById('resultSection');
+      if (resultSection) {
+        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 300);
+    
   } catch (error) {
     console.error('Error generating full LP:', error);
-    window.lpApp.uiController.showError('LP生成中にエラーが発生しました: ' + error.message);
+    console.log('LP生成中にエラーが発生しました: ' + error.message);
   }
 }
 
@@ -4951,6 +5524,333 @@ function downloadComparison() {
   URL.revokeObjectURL(url);
 }
 
+// Reset to top function - accessed by logo click
+function resetToTop() {
+  // 生成中はリセットをブロック
+  if (window.isGenerating) {
+    alert('LP生成中です。完了するまでお待ちください。');
+    return;
+  }
+  
+  const generatingSection = document.getElementById('generatingSection');
+  if (generatingSection && generatingSection.style.display !== 'none') {
+    console.log('⚠️ 生成中はリセットできません');
+    return;
+  }
+  
+  // 確認ダイアログを表示
+  const confirmReset = confirm('本当に最初からやり直しますか？アップロードしたファイルや生成結果は失われます。');
+  if (!confirmReset) {
+    return;
+  }
+  
+  {
+    try {
+      // Clear all data using existing clear function (but not API settings)
+      if (window.lpApp && window.lpApp.core && window.lpApp.core.clearData) {
+        window.lpApp.core.clearData();
+      }
+      
+      // Reset UI to initial state
+      const allSections = document.querySelectorAll('section');
+      allSections.forEach(section => {
+        if (section.id === 'uploadSection') {
+          section.style.display = 'block';
+        } else {
+          section.style.display = 'none';
+        }
+      });
+      
+      // Clear file list
+      const fileList = document.getElementById('fileList');
+      if (fileList) fileList.innerHTML = '';
+      
+      // Reset file input
+      const fileInput = document.getElementById('fileInput');
+      if (fileInput) fileInput.value = '';
+      
+      // Clear all form inputs except API keys
+      const inputs = document.querySelectorAll('input, textarea');
+      inputs.forEach(input => {
+        if (input.type !== 'file' && !input.classList.contains('api-key-input')) {
+          input.value = '';
+        }
+      });
+      
+      // Scroll to top
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+      
+      // Show success message
+      // アプリリセット成功（メッセージを簡略化）
+      
+      console.log('🔄 アプリが初期状態にリセットされました');
+    } catch (error) {
+      console.error('リセット中にエラーが発生しました:', error);
+      console.log('リセット中にエラーが発生しました');
+    }
+  }
+}
+
+// Reset API settings function - accessed by reset button
+function resetApiSettings() {
+  // API設定をリセット（確認ダイアログを削除）
+  {
+    try {
+      // Clear all API key inputs
+      const apiKeyInputs = document.querySelectorAll('.api-key-input');
+      apiKeyInputs.forEach(input => {
+        input.value = '';
+      });
+      
+      // Clear stored API keys
+      if (window.envLoader && window.envLoader.clear) {
+        window.envLoader.clear();
+      }
+      
+      // Clear storage utilities API keys
+      if (window.StorageUtils && window.StorageUtils.clearApiKeys) {
+        window.StorageUtils.clearApiKeys();
+      }
+      
+      // Reset to default provider (OpenAI)
+      if (typeof selectProvider === 'function') {
+        selectProvider('openai');
+      }
+      
+      // Clear selected model
+      if (window.lpApp && window.lpApp.core && window.lpApp.core.aiService) {
+        window.lpApp.core.aiService.setSelectedModel(null);
+      }
+      
+      // Update model availability check
+      if (window.lpApp && window.lpApp.core && window.lpApp.core.checkModelAvailability) {
+        window.lpApp.core.checkModelAvailability();
+      }
+      
+      // Update API status display
+      if (typeof updateApiStatus === 'function') {
+        updateApiStatus();
+      }
+      
+      // Show success message
+      // API設定リセット成功（メッセージを簡略化）
+      
+      console.log('🗑️ API設定がリセットされました');
+    } catch (error) {
+      console.error('API設定リセット中にエラーが発生しました:', error);
+      console.log('API設定リセット中にエラーが発生しました');
+    }
+  }
+}
+
+// Make functions globally available
+window.resetToTop = resetToTop;
+window.resetApiSettings = resetApiSettings;
+
+// APIキー自動検出機能
+const keyDetector = new APIKeyDetector();
+
+// APIキー自動検出
+function autoDetectAPIKey() {
+  const input = document.getElementById('autoDetectInput');
+  const resultDiv = document.getElementById('autoDetectResult');
+  const apiKey = input.value.trim();
+  
+  if (!apiKey) {
+    resultDiv.style.display = 'none';
+    return;
+  }
+  
+  const detection = keyDetector.detectProvider(apiKey);
+  resultDiv.style.display = 'block';
+  
+  if (detection.valid) {
+    // 自動的にAPIキーを適用（ボタンなし）
+    applyDetectedKey(detection.provider, detection.key);
+  } else {
+    resultDiv.innerHTML = `
+      <div style="padding: 1rem; background: var(--error-bg); color: var(--error); border-radius: 8px;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.5rem;">❌</span>
+          <strong>不明なAPIキー形式です</strong>
+        </div>
+        ${detection.suggestion ? `<p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">${detection.suggestion}</p>` : ''}
+      </div>
+    `;
+  }
+}
+
+// 検出されたAPIキーを適用
+function applyDetectedKey(provider, apiKey) {
+  // APIキーをセッションストレージに保存
+  sessionStorage.setItem(`TEMP_${provider.toUpperCase()}_API_KEY`, apiKey);
+  
+  // 自動検出結果を表示
+  const resultDiv = document.getElementById('autoDetectResult');
+  resultDiv.style.display = 'block';
+  resultDiv.innerHTML = `
+    <div style="padding: 1rem; background: var(--success-bg); color: var(--success); border-radius: 8px;">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 1.5rem;">✅</span>
+        <strong>${getProviderIcon(provider)} ${getProviderName(provider)} APIキーを保存しました</strong>
+      </div>
+      <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+        🔄 接続テスト中...
+      </div>
+    </div>
+  `;
+  
+  // 自動検出入力欄をクリア
+  document.getElementById('autoDetectInput').value = '';
+  
+  // 自動的に接続テストを実行
+  setTimeout(async () => {
+    try {
+      await testApiConnection(provider);
+      // 接続テスト成功時の表示更新
+      resultDiv.innerHTML = `
+        <div style="padding: 1rem; background: var(--success-bg); color: var(--success); border-radius: 8px;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.5rem;">✅</span>
+            <strong>${getProviderIcon(provider)} ${getProviderName(provider)} 接続確認済み</strong>
+          </div>
+          <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+            🎉 APIキーが正常に動作しています
+          </div>
+        </div>
+      `;
+      
+      // 説明文は変更しない（接続成功後も元のメッセージを保持）
+    } catch (error) {
+      console.log('接続テスト失敗:', error);
+      // 接続テスト失敗時の表示更新
+      resultDiv.innerHTML = `
+        <div style="padding: 1rem; background: #fef2f2; color: #dc2626; border-radius: 8px;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.5rem;">⚠️</span>
+            <strong>${getProviderIcon(provider)} ${getProviderName(provider)} 接続エラー</strong>
+          </div>
+          <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+            APIキーが無効か、ネットワークエラーが発生しました
+          </div>
+        </div>
+      `;
+      
+      // エラー時も説明文は変更しない
+    }
+    
+    // ボタンの状態を更新
+    updatePromptButtonStates();
+  }, 500);
+  
+  // 即座にボタンの状態も更新
+  updatePromptButtonStates();
+}
+
+
+// プロバイダーアイコンを取得
+function getProviderIcon(provider) {
+  const icons = {
+    grok: '🚀',
+    openai: '🤖',
+    anthropic: '🧠',
+    deepseek: '🔍'
+  };
+  return icons[provider] || '❓';
+}
+
+// プロバイダー名を取得
+function getProviderName(provider) {
+  const names = {
+    grok: 'xAI Grok',
+    openai: 'OpenAI GPT',
+    anthropic: 'Anthropic Claude',
+    deepseek: 'DeepSeek'
+  };
+  return names[provider] || provider;
+}
+
+// リアルタイム検出（入力欄での自動検出）
+function setupRealtimeDetection() {
+  // 各プロバイダーの入力欄にリアルタイム検出を追加
+  const providers = ['openai', 'anthropic', 'grok', 'deepseek'];
+  
+  providers.forEach(provider => {
+    const input = document.getElementById(`${provider}ApiKeyInput`);
+    if (input) {
+      input.addEventListener('paste', function(e) {
+        setTimeout(() => {
+          const pastedKey = input.value.trim();
+          const detection = keyDetector.detectProvider(pastedKey);
+          
+          if (detection.valid && detection.provider !== provider) {
+            // 間違ったプロバイダーに貼り付けた場合の警告
+            // 自動で正しいプロバイダーに適用（確認ダイアログを削除）
+            input.value = '';
+            applyDetectedKey(detection.provider, pastedKey);
+          }
+        }, 10);
+      });
+      
+      // 入力時の形式チェック
+      input.addEventListener('input', function() {
+        const validation = keyDetector.validateKeyFormat(provider, input.value);
+        const testButton = input.parentElement.querySelector('button');
+        
+        if (input.value && !validation.valid) {
+          input.style.borderColor = 'var(--error)';
+          if (testButton) {
+            testButton.title = validation.message;
+          }
+        } else {
+          input.style.borderColor = '';
+          if (testButton) {
+            testButton.title = '接続テスト';
+          }
+        }
+      });
+    }
+  });
+}
+
+
+
+// ページ読み込み時に実行
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 DOM loaded, setting up API connection test buttons');
+  
+  setupRealtimeDetection();
+  
+  // ボタンの初期状態を更新
+  updatePromptButtonStates();
+  
+  // Ensure testApiConnection buttons work by adding event listeners
+  const providers = ['openai', 'anthropic', 'grok', 'deepseek'];
+  providers.forEach(provider => {
+    const button = document.querySelector(`#${provider}Config .btn-secondary`);
+    if (button) {
+      // Remove existing onclick to avoid conflicts
+      button.removeAttribute('onclick');
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log(`🔘 Button clicked for provider: ${provider}`);
+        testApiConnection(provider);
+      });
+      console.log(`✅ Event listener added for ${provider} test button`);
+    } else {
+      console.warn(`⚠️ Test button not found for provider: ${provider}`);
+    }
+  });
+});
+
+// Make functions globally available
+window.autoDetectAPIKey = autoDetectAPIKey;
+window.applyDetectedKey = applyDetectedKey;
+
 // Export classes for debugging and extensibility
 window.LPGeneratorApp = LPGeneratorApp;
 window.AppCore = AppCore;
@@ -4958,3 +5858,178 @@ window.UIController = UIController;
 window.FileUploadHandler = FileUploadHandler;
 window.ClientFileProcessor = ClientFileProcessor;
 window.AIService = AIService;
+
+// === 生成結果復旧機能 ===
+window.debugLP = {
+  recoverResults() {
+    console.log('🔍 手動復旧を試行中...');
+    
+    // Check all possible storage locations
+    const locations = {
+      'core.generatedLP': window.lpApp?.core?.generatedLP,
+      'generatedLP': window.lpApp?.generatedLP,
+      'core.lastRawResponse': window.lpApp?.core?.lastRawResponse,
+      'window.lastGrokResponse': window.lastGrokResponse,
+      'lastGenerationResult': window.lastGenerationResult
+    };
+    
+    console.log('📂 チェック中の保存場所:', Object.keys(locations));
+    
+    let found = false;
+    for (const [location, data] of Object.entries(locations)) {
+      if (data && typeof data === 'object') {
+        console.log(`✅ データ発見: ${location}`, data);
+        found = true;
+        
+        // Try to display this data
+        try {
+          if (location === 'core.lastRawResponse' && data.content) {
+            // Raw AI response - create basic HTML
+            const basicHTML = this.createBasicHTMLFromText(data.content);
+            const lpData = {
+              code: {
+                html: basicHTML,
+                css: 'body { font-family: sans-serif; line-height: 1.6; margin: 0; padding: 20px; } .container { max-width: 800px; margin: 0 auto; }',
+                js: ''
+              },
+              analysis: {
+                targetAudience: '復旧されたデータ',
+                keyMessages: ['データを復旧しました'],
+                designConcept: 'シンプルなレイアウト'
+              }
+            };
+            
+            // Set the data and show results
+            window.lpApp.core.generatedLP = lpData;
+            this.forceShowResults(lpData);
+            
+          } else if (data.code && data.code.html) {
+            // Properly formatted LP data
+            window.lpApp.core.generatedLP = data;
+            this.forceShowResults(data);
+          }
+          
+          break; // Use first found data
+        } catch (displayError) {
+          console.error(`⚠️ ${location}のデータ表示エラー:`, displayError);
+        }
+      }
+    }
+    
+    if (!found) {
+      console.log('❌ 復旧可能なデータが見つかりませんでした');
+      // Show manual instructions
+      alert('復旧可能なデータが見つかりませんでした。\n\n再度生成を実行してください。');
+    }
+    
+    return found;
+  },
+  
+  createBasicHTMLFromText(content) {
+    // Extract key parts if it looks like JSON
+    let title = 'AI生成ランディングページ';
+    let body = content;
+    
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed.analysis?.keyMessages) {
+        title = parsed.analysis.keyMessages[0] || title;
+      }
+      if (parsed.code?.html) {
+        return parsed.code.html;
+      }
+    } catch (e) {
+      // Not JSON, use as text
+    }
+    
+    return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background: #f8f9fa; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        .content { white-space: pre-wrap; margin: 20px 0; }
+        .recovery-notice { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="recovery-notice">
+            <strong>🔄 データ復旧</strong><br>
+            生成されたコンテンツを復旧しました。完全な表示のために再生成を推奨します。
+        </div>
+        <h1>${title}</h1>
+        <div class="content">${body.substring(0, 2000)}${body.length > 2000 ? '...' : ''}</div>
+    </div>
+</body>
+</html>`;
+  },
+  
+  forceShowResults(lpData) {
+    console.log('🎯 結果を強制表示中...');
+    
+    try {
+      // Hide generating section
+      const generatingSection = document.getElementById('generatingSection');
+      if (generatingSection) {
+        generatingSection.style.display = 'none';
+      }
+      
+      // Show result section
+      const resultSection = document.getElementById('resultSection');
+      if (resultSection) {
+        resultSection.style.display = 'block';
+        
+        // Update preview
+        if (window.lpApp?.uiController?.updatePreview) {
+          window.lpApp.uiController.updatePreview();
+        }
+        
+        // Update displays
+        if (window.lpApp?.uiController?.displayGenerationResults) {
+          window.lpApp.uiController.displayGenerationResults();
+        }
+        
+        // Scroll to results
+        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        console.log('✅ 結果表示完了');
+        alert('✅ 生成結果を復旧しました！\n\n支払い済みのAPI料金でのコンテンツを表示しています。');
+      } else {
+        console.error('❌ Result section not found');
+      }
+    } catch (error) {
+      console.error('⚠️ 強制表示エラー:', error);
+    }
+  },
+  
+  // Check current generation state
+  checkState() {
+    console.log('🔍 現在の状態:');
+    console.log('- isGenerating:', window.isGenerating);
+    console.log('- generatedLP:', window.lpApp?.core?.generatedLP);
+    console.log('- lastRawResponse:', window.lpApp?.core?.lastRawResponse);
+    console.log('- lastGrokResponse:', window.lastGrokResponse);
+    
+    const resultSection = document.getElementById('resultSection');
+    const generatingSection = document.getElementById('generatingSection');
+    
+    console.log('- resultSection display:', resultSection?.style?.display);
+    console.log('- generatingSection display:', generatingSection?.style?.display);
+    
+    return {
+      isGenerating: window.isGenerating,
+      hasGeneratedLP: !!window.lpApp?.core?.generatedLP,
+      hasRawResponse: !!window.lpApp?.core?.lastRawResponse,
+      resultVisible: resultSection?.style?.display === 'block',
+      generatingVisible: generatingSection?.style?.display === 'block'
+    };
+  }
+};
+
+// Global recovery function for console access
+window.recoverLP = () => window.debugLP.recoverResults();

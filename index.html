@@ -1,18 +1,90 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <script>
+      // Enhanced cache clearing to ensure fresh content
+      (function() {
+        // Clear all service worker caches
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            return Promise.all(
+              names.map(function(name) {
+                console.log('Clearing cache:', name);
+                return caches.delete(name);
+              })
+            );
+          }).then(function() {
+            console.log('All caches cleared');
+          });
+        }
+        
+        // Clear session storage except API keys
+        if (window.sessionStorage) {
+          const keysToKeep = ['TEMP_GROK_API_KEY', 'TEMP_OPENAI_API_KEY', 'TEMP_ANTHROPIC_API_KEY', 'TEMP_DEEPSEEK_API_KEY'];
+          const keys = Object.keys(sessionStorage);
+          keys.forEach(function(key) {
+            if (!keysToKeep.includes(key)) {
+              sessionStorage.removeItem(key);
+            }
+          });
+        }
+        
+        // Clear local storage of old data
+        if (window.localStorage) {
+          const now = Date.now();
+          const keys = Object.keys(localStorage);
+          keys.forEach(function(key) {
+            try {
+              const item = localStorage.getItem(key);
+              if (item && item.includes('timestamp')) {
+                const data = JSON.parse(item);
+                if (data.timestamp && (now - data.timestamp) > 86400000) { // 24 hours
+                  localStorage.removeItem(key);
+                }
+              }
+            } catch (e) {
+              // Skip if not JSON
+            }
+          });
+        }
+        
+        // Force reload if from cache
+        if (window.performance && window.performance.navigation.type === 2) {
+          window.location.reload(true);
+        }
+        
+        // Register service worker for better cache management
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/sw.js?v=20250612')
+            .then(function(registration) {
+              console.log('Service Worker registered:', registration);
+              
+              // Send message to clear caches
+              if (registration.active) {
+                registration.active.postMessage('CLEAR_ALL_CACHES');
+              }
+            })
+            .catch(function(error) {
+              console.log('Service Worker registration failed:', error);
+            });
+        }
+      })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LP自動生成ツール - デザイナー向け</title>
     <meta name="description" content="クライアント資料からAIが自動でランディングページを生成。デザイナーの作業を80%効率化">
-    <link rel="stylesheet" href="styles.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="styles.css?v=20250612" id="mainStylesheet">
 </head>
 <body>
     <!-- メインワークスペース -->
     <div id="app" class="workspace">
         <!-- ヘッダー -->
         <header class="app-header">
-            <h1>LP自動生成ツール</h1>
+            <h1 class="app-logo" onclick="event.preventDefault(); resetToTop();" style="cursor: pointer;">LP自動生成ツール</h1>
         </header>
 
         <!-- Step 1: ファイルアップロード -->
@@ -29,6 +101,7 @@
                     </svg>
                     <h3>クライアント資料をドロップ</h3>
                     <p>PDF, Word, Excel, PowerPoint, 画像に対応</p>
+                    <p style="font-size: 0.85rem; color: #6b7280; margin-top: 0.5rem;">※ 資料の容量が増えるほどAI解析に時間がかかります</p>
                     <button class="btn-primary" onclick="document.getElementById('fileInput').click()">
                         ファイルを選択
                     </button>
@@ -48,59 +121,27 @@
         <section class="api-config-section" id="apiConfigSection">
             <div class="section-header">
                 <h2>🔑 API設定</h2>
-                <p>Grok APIキーを入力してください（セキュリティのため一時保存のみ）</p>
+                <p>xAIのGrok APIキーを入力してください（現在Grok3のみ対応）</p>
             </div>
             
             <div class="api-config-card">
-                <div class="api-status" id="apiStatus">
-                    <div class="status-indicator" id="statusIndicator">⚠️</div>
-                    <div class="status-text" id="statusText">APIキーが設定されていません</div>
-                </div>
-                
-                <div class="api-key-setup">
-                    <label for="grokApiKeyInput">Grok API Key:</label>
-                    <div class="api-key-input-group">
-                        <input type="password" id="grokApiKeyInput" class="api-key-input" style="width: 100%;">
+                <!-- APIキー自動検出 -->
+                <div class="api-auto-detect" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
+                    <h4 style="margin-bottom: 0.5rem;">🔍 APIキー自動検出</h4>
+                    <p id="apiDetectDescription" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        xAIのGrok APIキーを入力してください（xai- で始まるキー）
+                    </p>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="autoDetectInput" class="api-key-input" 
+                               placeholder="xai-で始まるGrok APIキーを入力" 
+                               style="flex: 1;">
+                        <button class="btn-primary" onclick="if(typeof autoDetectAPIKey !== 'undefined') { autoDetectAPIKey(); } else { console.error('スクリプト未読み込み'); }">🚀 Grok設定</button>
                     </div>
-                    <small>モデル: grok-3-latest | エンドポイント: https://api.x.ai/v1/chat/completions<br>
-                    ⚠️ セキュリティのため、APIキーはページリロード時に消去されます</small>
+                    <div id="autoDetectResult" style="margin-top: 1rem; display: none;"></div>
                 </div>
                 
-                <div class="api-actions">
-                    <button class="btn-secondary" onclick="saveApiKey()">💾 一時保存</button>
-                </div>
                 
                 <div id="testResult" class="test-result" style="display: none;"></div>
-                
-                <!-- AI Model Selector (moved here) -->
-                <div class="model-selector-subsection" id="modelSelectorSection" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
-                    <div class="section-header">
-                        <h3>🤖 AIモデル選択</h3>
-                        <p>使用するAIサービスを選択してください</p>
-                    </div>
-                    
-                    <div class="model-selector-grid">
-                        <div class="model-card" id="grokCard" onclick="selectAIModel('grok')">
-                            <div class="model-icon">🚀</div>
-                            <h3>Grok</h3>
-                            <div class="model-status" id="grokStatus">
-                                <span class="status-indicator"></span>
-                                <span class="status-text">確認中...</span>
-                            </div>
-                            <p class="model-description">X.AI製・最新トレンド対応 (grok-3-latest)</p>
-                            <div class="model-features">
-                                <span class="feature">✓ 最新</span>
-                                <span class="feature">✓ トレンド</span>
-                                <span class="feature">✓ 高品質</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="selected-model-info" id="selectedModelInfo" style="display: none;">
-                        <p>選択中のモデル: <strong id="selectedModelName">-</strong></p>
-                        <button class="btn-secondary" onclick="changeAIModel()">モデルを変更</button>
-                    </div>
-                </div>
             </div>
             
             
@@ -117,47 +158,7 @@
             <div class="copywriter-selection">
                 <h3>🎨 コピーライタースタイル選択</h3>
                 <div class="copywriter-grid">
-                    <div class="copywriter-card selected" data-style="dan-kennedy" onclick="selectCopywriterStyle(this)">
-                        <div class="copywriter-icon">🔥</div>
-                        <h4>ダン・ケネディ</h4>
-                        <p class="copywriter-description">直接反応マーケティングの父、急情性と心理トリガーを使ったコピー</p>
-                        <div class="copywriter-features">
-                            <span class="feature">緊急性</span>
-                            <span class="feature">恐怖訴求</span>
-                            <span class="feature">心理トリガー</span>
-                        </div>
-                    </div>
-                    <div class="copywriter-card" data-style="gary-halbert" onclick="selectCopywriterStyle(this)">
-                        <div class="copywriter-icon">🎯</div>
-                        <h4>ゲイリー・ハルバート</h4>
-                        <p class="copywriter-description">ストーリーテリングと感情に訴えるコピーで有名</p>
-                        <div class="copywriter-features">
-                            <span class="feature">ストーリー</span>
-                            <span class="feature">感情訴求</span>
-                            <span class="feature">結果実証</span>
-                        </div>
-                    </div>
-                    <div class="copywriter-card" data-style="john-carlton" onclick="selectCopywriterStyle(this)">
-                        <div class="copywriter-icon">⚡</div>
-                        <h4>ジョン・カールトン</h4>
-                        <p class="copywriter-description">挑発的で印象に残る強力なコピー</p>
-                        <div class="copywriter-features">
-                            <span class="feature">挑発的</span>
-                            <span class="feature">直接的</span>
-                            <span class="feature">インパクト</span>
-                        </div>
-                    </div>
-                    <div class="copywriter-card" data-style="eugene-schwartz" onclick="selectCopywriterStyle(this)">
-                        <div class="copywriter-icon">🧠</div>
-                        <h4>ユージーン・シュワルツ</h4>
-                        <p class="copywriter-description">心理学的洞察と深い理解に基づいたコピー</p>
-                        <div class="copywriter-features">
-                            <span class="feature">心理学</span>
-                            <span class="feature">深い洞察</span>
-                            <span class="feature">理論的</span>
-                        </div>
-                    </div>
-                    <div class="copywriter-card" data-style="david-ogilvy" onclick="selectCopywriterStyle(this)">
+                    <div class="copywriter-card selected" data-style="david-ogilvy" onclick="selectCopywriterStyle(this)">
                         <div class="copywriter-icon">🎩</div>
                         <h4>デイビッド・オグルビー</h4>
                         <p class="copywriter-description">ブランドと品質を重視したエレガントなコピー</p>
@@ -165,16 +166,6 @@
                             <span class="feature">ブランド重視</span>
                             <span class="feature">エレガント</span>
                             <span class="feature">信頼性</span>
-                        </div>
-                    </div>
-                    <div class="copywriter-card" data-style="claude-hopkins" onclick="selectCopywriterStyle(this)">
-                        <div class="copywriter-icon">📈</div>
-                        <h4>クロード・ホプキンス</h4>
-                        <p class="copywriter-description">科学的広告の先駆者、テストとデータを重視</p>
-                        <div class="copywriter-features">
-                            <span class="feature">科学的</span>
-                            <span class="feature">データ重視</span>
-                            <span class="feature">A/Bテスト</span>
                         </div>
                     </div>
                     <div class="copywriter-card" data-style="robert-collier" onclick="selectCopywriterStyle(this)">
@@ -197,24 +188,12 @@
                             <span class="feature">詳細説明</span>
                         </div>
                     </div>
-                    <div class="copywriter-card" data-style="haruki-murakami" onclick="selectCopywriterStyle(this)">
-                        <div class="copywriter-icon">🌙</div>
-                        <h4>村上春樹風</h4>
-                        <p class="copywriter-description">文学的で洗練された静かな訴求</p>
-                        <div class="copywriter-features">
-                            <span class="feature">文学的</span>
-                            <span class="feature">内省的</span>
-                            <span class="feature">余白の美</span>
-                        </div>
-                    </div>
                 </div>
             </div>
 
 
             <div class="prompt-actions" style="margin-top: 2rem; text-align: center;">
-                <button class="btn-secondary" onclick="selectAllCopywriters()">✅ 全員選択</button>
-                <button class="btn-secondary" onclick="resetPromptSelection()">🔄 選択をリセット</button>
-                <button class="btn-primary" onclick="compareAllIntros()" style="background-color: #059669;">📊 9人全員の冒頭を比較</button>
+                <button class="btn-primary" onclick="compareAllIntros()" style="background-color: #059669;">📊 3人全員の冒頭を比較</button>
                 <button class="btn-primary" onclick="generateWithSelectedPrompts()" id="generateWithPromptsButton">🚀 選択したスタイルで生成</button>
             </div>
             
@@ -677,115 +656,32 @@
         </div>
     </div>
 
-    <!-- エラーメッセージ -->
-    <div class="error-toast" id="errorToast" style="display: none;">
-        <div class="error-content">
-            <span class="error-icon">⚠️</span>
-            <span class="error-message" id="errorMessage"></span>
-            <button class="error-close" onclick="hideError()">✕</button>
-        </div>
-    </div>
-
-    <!-- 詳細エラーモーダル -->
-    <div class="error-modal" id="errorModal" style="display: none;">
-        <div class="error-modal-content">
-            <div class="error-modal-header">
-                <h3>❌ エラー詳細</h3>
-                <button class="btn-icon" onclick="closeErrorModal()">✕</button>
-            </div>
-            <div class="error-modal-body">
-                <div class="error-section">
-                    <label>エラーメッセージ:</label>
-                    <div class="error-detail" id="errorDetailMessage"></div>
-                </div>
-                <div class="error-section">
-                    <label>エラーコード:</label>
-                    <div class="error-code-container">
-                        <code id="errorCode" class="error-code"></code>
-                        <button class="btn-copy" onclick="copyErrorCode()">📋 コピー</button>
-                    </div>
-                </div>
-                <div class="error-section">
-                    <label>発生場所:</label>
-                    <div class="error-detail" id="errorLocation"></div>
-                </div>
-                <div class="error-section">
-                    <label>時刻:</label>
-                    <div class="error-detail" id="errorTimestamp"></div>
-                </div>
-                <div class="error-section">
-                    <label>推奨対処法:</label>
-                    <div class="error-detail" id="errorSolution"></div>
-                </div>
-            </div>
-            <div class="error-modal-footer">
-                <button class="btn-secondary" onclick="copyFullError()">全体をコピー</button>
-                <button class="btn-secondary" onclick="openDebugConsole()">🔍 デバッグ</button>
-                <button class="btn-primary" onclick="closeErrorModal()">閉じる</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- エラーログモーダル -->
-    <div class="error-log-modal" id="errorLogModal" style="display: none;">
-        <div class="error-log-content">
-            <div class="error-log-header">
-                <h3>📋 エラーログ履歴</h3>
-                <div class="error-log-actions">
-                    <button class="btn-secondary" onclick="clearErrorLog()">🗑️ ログクリア</button>
-                    <button class="btn-secondary" onclick="downloadErrorLog()">💾 ダウンロード</button>
-                    <button class="btn-icon" onclick="closeErrorLog()">✕</button>
-                </div>
-            </div>
-            <div class="error-log-body">
-                <div class="error-log-stats" id="errorLogStats">
-                    <div class="stat-item">
-                        <span class="stat-label">総エラー数:</span>
-                        <span class="stat-value" id="totalErrors">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">最新エラー:</span>
-                        <span class="stat-value" id="latestError">なし</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">セッション開始:</span>
-                        <span class="stat-value" id="sessionStart">-</span>
-                    </div>
-                </div>
-                <div class="error-log-filters">
-                    <select id="errorTypeFilter" onchange="filterErrorLog()">
-                        <option value="">すべてのエラー</option>
-                        <option value="LP_GENERATION_ERROR">LP生成エラー</option>
-                        <option value="JSON_PARSE_ERROR">JSON解析エラー</option>
-                        <option value="API_ERROR">APIエラー</option>
-                        <option value="NETWORK_ERROR">ネットワークエラー</option>
-                    </select>
-                    <select id="errorModelFilter" onchange="filterErrorLog()">
-                        <option value="">すべてのモデル</option>
-                        <option value="grok">Grok</option>
-                    </select>
-                </div>
-                <div class="error-log-list" id="errorLogList">
-                    <div class="no-errors">
-                        <div class="no-errors-icon">✅</div>
-                        <div class="no-errors-text">エラーはありません</div>
-                        <div class="no-errors-desc">素晴らしい！現在のセッションでエラーは発生していません。</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- トップページに戻るボタン -->
-    <button id="backToTopBtn" class="back-to-top" onclick="backToTop()" title="最初に戻る">
+    <button id="backToTopBtn" class="back-to-top" onclick="backToTop()" title="APIキーを初期化してトップページに戻る">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z"/>
         </svg>
-        <span>最初に戻る</span>
+        <span>APIキーを初期化してトップページに戻る</span>
     </button>
 
 
     <!-- JavaScriptファイル読み込み -->
+    <script>
+      // Add timestamp-based cache busting to all resources
+      (function() {
+        const timestamp = Date.now();
+        
+        // Update stylesheet
+        const stylesheet = document.getElementById('mainStylesheet');
+        if (stylesheet) {
+          stylesheet.href = `styles.css?t=${timestamp}`;
+        }
+        
+        // This will be used for script loading
+        window.cacheTimestamp = timestamp;
+      })();
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
     <script>
       // PDF.js worker configuration
@@ -797,8 +693,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" crossorigin="anonymous"></script>
-    <script src="scripts/core.js"></script>
-    <script src="scripts/ai-service.js"></script>
-    <script src="scripts/app.js"></script>
+    <script src="scripts/error-fixes.js?v=20250612"></script>
+    <script src="scripts/api-key-detector.js?v=20250612"></script>
+    <script src="scripts/core.js?v=20250612"></script>
+    <script src="scripts/ai-service.js?v=20250612"></script>
+    <script src="scripts/app.js?v=20250612"></script>
+    <script>
+      // Add timestamp to prevent caching
+      const timestamp = Date.now();
+      document.querySelectorAll('script[src^="scripts/"]').forEach(script => {
+        script.src = script.src + '?t=' + timestamp;
+      });
+    </script>
+    
 </body>
 </html>
