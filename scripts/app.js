@@ -4383,8 +4383,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // ================================
 
 // Store selected options
-window.selectedCopywriterStyles = ['david-ogilvy']; // 複数選択対応に変更
-window.selectedCopywriterStyle = 'david-ogilvy'; // 後方互換性のため残す
+window.selectedCopywriterStyles = []; // 複数選択対応、初期状態は未選択
+window.selectedCopywriterStyle = ''; // 後方互換性のため残す、初期状態は未選択
 
 // Copywriter style definitions
 const copywriterStyles = {
@@ -4400,19 +4400,20 @@ const copywriterStyles = {
 - 長期的なブランド価値の構築
 - 上品で知的な印象
 - 誠実さと透明性の重視`
-  },
-  'robert-collier': {
-    name: 'ロバート・コリアー',
-    instructions: `あなたはロバート・コリアーの共感重視スタイルをマスターしたコピーライターです。以下の原則を必ず守ってください：
+  },  'dan-kennedy': {
+    name: 'ダン・ケネディ',
+    instructions: `あなたはダン・ケネディの実践的ダイレクトレスポンスマーケティングスタイルをマスターしたコピーライターです。以下の原則を必ず守ってください：
 
-【ロバート・コリアースタイルの特徴】
-- 読者の心の中の対話に入り込む
-- 日常的で親しみやすい言葉遣い
-- 読者の現在の気持ちから始める
-- 段階的に希望へと導く構成
-- 個人的な手紙のような温かさ
-- 読者一人一人に語りかける文体
-- 共感から行動へ自然な流れ`
+【ダン・ケネディスタイルの特徴】
+- 挑発的で注意を引く導入
+- 「不都合な真実」を正直に語る
+- 実践的で具体的な成果を提示
+- 他との違いを明確に示す
+- 今すぐ行動すべき理由を強調
+- 読者を選別する強気な姿勢
+- 時間的切迫感とスケアシティの活用
+- 個人的な成功ストーリーの活用
+- 結果にコミットした保証の提示`
   },
   'joe-sugarman': {
     name: 'ジョー・シュガーマン',
@@ -4449,15 +4450,12 @@ function selectCopywriterStyle(element) {
       window.selectedCopywriterStyles.push(style);
     }
   }
-  
-  // 後方互換性のため、最後に選択されたものを単一選択として保持
+    // 後方互換性のため、最後に選択されたものを単一選択として保持
   if (window.selectedCopywriterStyles.length > 0) {
     window.selectedCopywriterStyle = window.selectedCopywriterStyles[window.selectedCopywriterStyles.length - 1];
   } else {
-    // 何も選択されていない場合はデフォルトに戻す
-    window.selectedCopywriterStyles = ['david-ogilvy'];
-    window.selectedCopywriterStyle = 'david-ogilvy';
-    document.querySelector('.copywriter-card[data-style="david-ogilvy"]').classList.add('selected');
+    // 何も選択されていない場合は空のまま
+    window.selectedCopywriterStyle = '';
   }
   
   console.log('Selected copywriter styles:', window.selectedCopywriterStyles);
@@ -5538,59 +5536,26 @@ function resetToTop() {
     return;
   }
   
-  // 確認ダイアログを表示
-  const confirmReset = confirm('本当に最初からやり直しますか？アップロードしたファイルや生成結果は失われます。');
-  if (!confirmReset) {
-    return;
-  }
-  
-  {
-    try {
-      // Clear all data using existing clear function (but not API settings)
-      if (window.lpApp && window.lpApp.core && window.lpApp.core.clearData) {
-        window.lpApp.core.clearData();
+  try {
+    // Reset UI to initial state (upload section)
+    const allSections = document.querySelectorAll('section');
+    allSections.forEach(section => {
+      if (section.id === 'uploadSection') {
+        section.style.display = 'block';
+      } else {
+        section.style.display = 'none';
       }
-      
-      // Reset UI to initial state
-      const allSections = document.querySelectorAll('section');
-      allSections.forEach(section => {
-        if (section.id === 'uploadSection') {
-          section.style.display = 'block';
-        } else {
-          section.style.display = 'none';
-        }
-      });
-      
-      // Clear file list
-      const fileList = document.getElementById('fileList');
-      if (fileList) fileList.innerHTML = '';
-      
-      // Reset file input
-      const fileInput = document.getElementById('fileInput');
-      if (fileInput) fileInput.value = '';
-      
-      // Clear all form inputs except API keys
-      const inputs = document.querySelectorAll('input, textarea');
-      inputs.forEach(input => {
-        if (input.type !== 'file' && !input.classList.contains('api-key-input')) {
-          input.value = '';
-        }
-      });
-      
-      // Scroll to top
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-      
-      // Show success message
-      // アプリリセット成功（メッセージを簡略化）
-      
-      console.log('🔄 アプリが初期状態にリセットされました');
-    } catch (error) {
-      console.error('リセット中にエラーが発生しました:', error);
-      console.log('リセット中にエラーが発生しました');
-    }
+    });
+    
+    // Scroll to top
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    
+    console.log('🔄 トップページに戻りました');
+  } catch (error) {
+    console.error('トップページに戻る際にエラーが発生しました:', error);
   }
 }
 

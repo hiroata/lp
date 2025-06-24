@@ -3,8 +3,7 @@
 <head>
     <script>
       // Enhanced cache clearing to ensure fresh content
-      (function() {
-        // Clear all service worker caches
+      (function() {        // Clear all service workers
         if ('caches' in window) {
           caches.keys().then(function(names) {
             return Promise.all(
@@ -158,24 +157,23 @@
             <div class="copywriter-selection">
                 <h3>🎨 コピーライタースタイル選択</h3>
                 <div class="copywriter-grid">
-                    <div class="copywriter-card selected" data-style="david-ogilvy" onclick="selectCopywriterStyle(this)">
+                    <div class="copywriter-card" data-style="david-ogilvy" onclick="selectCopywriterStyle(this)">
                         <div class="copywriter-icon">🎩</div>
                         <h4>デイビッド・オグルビー</h4>
-                        <p class="copywriter-description">ブランドと品質を重視したエレガントなコピー</p>
-                        <div class="copywriter-features">
+                        <p class="copywriter-description">ブランドと品質を重視したエレガントなコピー</p>                        <div class="copywriter-features">
                             <span class="feature">ブランド重視</span>
                             <span class="feature">エレガント</span>
                             <span class="feature">信頼性</span>
                         </div>
                     </div>
-                    <div class="copywriter-card" data-style="robert-collier" onclick="selectCopywriterStyle(this)">
-                        <div class="copywriter-icon">💌</div>
-                        <h4>ロバート・コリアー</h4>
-                        <p class="copywriter-description">読者の心に寄り添う共感型コピー</p>
+                    <div class="copywriter-card" data-style="dan-kennedy" onclick="selectCopywriterStyle(this)">
+                        <div class="copywriter-icon">🎯</div>
+                        <h4>ダン・ケネディ</h4>
+                        <p class="copywriter-description">実践的なダイレクトレスポンスマーケティング</p>
                         <div class="copywriter-features">
-                            <span class="feature">共感重視</span>
-                            <span class="feature">対話形式</span>
-                            <span class="feature">親しみやすさ</span>
+                            <span class="feature">結果重視</span>
+                            <span class="feature">挑発的</span>
+                            <span class="feature">行動促進</span>
                         </div>
                     </div>
                     <div class="copywriter-card" data-style="joe-sugarman" onclick="selectCopywriterStyle(this)">
@@ -655,14 +653,12 @@
             <p id="loadingMessage">処理中...</p>
         </div>
     </div>
-
-
     <!-- トップページに戻るボタン -->
-    <button id="backToTopBtn" class="back-to-top" onclick="backToTop()" title="APIキーを初期化してトップページに戻る">
+    <button id="backToTopBtn" class="back-to-top" onclick="resetToTop()" title="トップページに戻る">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z"/>
         </svg>
-        <span>APIキーを初期化してトップページに戻る</span>
+        <span>トップページに戻る</span>
     </button>
 
 

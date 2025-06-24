@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI広告作成支援ツール - プロ向け</title>
+    <meta name="description" content="AI技術でプロ品質の広告クリエイティブを自動生成。SNS広告、リスティング広告、バナー広告まで対応">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="styles.css?v=20250621">
+    <link rel="stylesheet" href="styles/ad-creator.css?v=20250621">
+</head>
+<body>
+    <!-- メインアプリケーション -->
+    <div id="adCreatorApp" class="workspace">
+        <!-- ヘッダー -->
+        <header class="app-header">
+            <h1 class="app-logo" onclick="resetAdCreator();" style="cursor: pointer;">
+                🎨 AI広告作成支援ツール
+            </h1>            <div class="header-actions">
+                <button class="btn-secondary" onclick="console.log('ギャラリーボタンクリック'); showGallery()">📁 作品ギャラリー</button>
+                <button class="btn-primary" onclick="console.log('設定ボタンクリック'); toggleSettings()">⚙️ 設定</button>
+            </div>
+        </header>
+
+        <!-- Step 1: プロジェクト設定 -->
+        <section class="project-setup-section" id="projectSetupSection">
+            <div class="section-header">
+                <h2>Step 1: プロジェクト設定</h2>
+                <p>作成する広告の基本情報を設定してください</p>
+            </div>
+            
+            <div class="setup-grid">
+                <!-- 広告タイプ選択 -->
+                <div class="setup-card">
+                    <h3>📱 広告タイプ</h3>                    <div class="ad-type-grid">
+                        <button class="ad-type-btn" data-type="sns-facebook" onclick="selectAdType(this)">
+                            <div class="ad-type-icon">📘</div>
+                            <span>Facebook広告</span>
+                        </button>
+                        <button class="ad-type-btn" data-type="youtube-ads" onclick="selectAdType(this)">
+                            <div class="ad-type-icon">📺</div>
+                            <span>YouTube広告</span>
+                        </button>
+                        <button class="ad-type-btn" data-type="banner" onclick="selectAdType(this)">
+                            <div class="ad-type-icon">🖼️</div>
+                            <span>バナー広告</span>
+                        </button>
+                        <button class="ad-type-btn" data-type="sns-twitter" onclick="selectAdType(this)">
+                            <div class="ad-type-icon">🐦</div>
+                            <span>X広告</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 商品・サービス情報 -->
+                <div class="setup-card">
+                    <h3>🎯 商品・サービス情報</h3>
+                    <div class="form-group">
+                        <label>商品・サービス名</label>
+                        <input type="text" id="productName" placeholder="例: 革新的なスマートウォッチ">
+                    </div>
+                    <div class="form-group">
+                        <label>業界・カテゴリ</label>
+                        <select id="industry">
+                            <option value="">選択してください</option>
+                            <option value="tech">テクノロジー・IT</option>
+                            <option value="fashion">ファッション・美容</option>
+                            <option value="food">食品・飲料</option>
+                            <option value="health">健康・ウェルネス</option>
+                            <option value="education">教育・学習</option>
+                            <option value="finance">金融・投資</option>
+                            <option value="travel">旅行・レジャー</option>
+                            <option value="real-estate">不動産</option>
+                            <option value="automotive">自動車</option>
+                            <option value="entertainment">エンターテイメント</option>
+                            <option value="b2b">B2Bサービス</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>主要な特徴・ベネフィット</label>
+                        <textarea id="keyFeatures" rows="3" placeholder="例: 7日間のバッテリー持続、防水機能、健康管理アプリ連携"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>価格帯</label>
+                        <input type="text" id="priceRange" placeholder="例: 29,800円〜39,800円">
+                    </div>                </div>
+
+                <!-- YouTube広告専用設定 -->
+                <div id="youtubeAdSettings" class="setup-card" style="display: none;">
+                    <h3>📺 YouTube広告フォーマット</h3>
+                    <div class="youtube-format-info">
+                        <p>YouTube広告の特性を最大限活用するため、適切なフォーマットを選択してください。</p>
+                    </div>
+                    <div class="form-group">
+                        <label>広告フォーマット</label>
+                        <select id="youtubeAdFormat" onchange="updateYouTubeFormatInfo(this.value)">
+                            <option value="スキップ可能なインストリーム広告">スキップ可能なインストリーム広告（推奨）</option>
+                            <option value="スキップ不可のインストリーム広告">スキップ不可のインストリーム広告</option>
+                            <option value="インフィード動画広告">インフィード動画広告</option>
+                            <option value="バンパー広告（6秒）">バンパー広告（6秒）</option>
+                            <option value="YouTubeショート広告">YouTubeショート広告</option>
+                            <option value="マストヘッド広告">マストヘッド広告</option>
+                        </select>
+                    </div>
+                    <div id="youtubeFormatDetails" class="format-details">
+                        <div class="format-info">
+                            <h4>📊 スキップ可能なインストリーム広告</h4>
+                            <ul>
+                                <li><strong>特徴:</strong> 5秒後にスキップ可能、最も一般的</li>
+                                <li><strong>時間:</strong> 制限なし（15-30秒推奨）</li>
+                                <li><strong>課金:</strong> 30秒視聴またはアクションで課金</li>
+                                <li><strong>適用:</strong> ブランド認知、販売促進、リード獲得</li>
+                                <li><strong>コツ:</strong> 最初の5秒でフックを作る</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>動画の向き</label>
+                        <select id="videoOrientation">
+                            <option value="landscape">横型（16:9）- 推奨</option>
+                            <option value="portrait">縦型（9:16）- ショート・モバイル最適</option>
+                            <option value="square">スクエア（1:1）- フィード最適</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>キャンペーン目標</label>
+                        <select id="youtubeCampaignGoal">
+                            <option value="brand-awareness">ブランド認知度と比較検討</option>
+                            <option value="sales">販売促進</option>
+                            <option value="leads">見込み顧客の獲得</option>
+                            <option value="traffic">ウェブサイトのトラフィック</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>重要な訴求ポイント（優先度順）</label>
+                        <textarea id="keyAppealPoints" rows="3" placeholder="例: 1. 業界最長バッテリー 2. 防水・耐久性 3. 健康管理機能 4. スタイリッシュデザイン"></textarea>
+                    </div>
+                </div>
+
+                <!-- ターゲット設定 -->
+                <div class="setup-card">
+                    <h3>👥 ターゲット設定</h3>
+                    <div class="form-group">
+                        <label>年齢層</label>
+                        <select id="ageTarget">
+                            <option value="">選択してください</option>
+                            <option value="teens">10代</option>
+                            <option value="twenties">20代</option>
+                            <option value="thirties">30代</option>
+                            <option value="forties">40代</option>
+                            <option value="fifties">50代</option>
+                            <option value="seniors">60代以上</option>
+                            <option value="adults">成人全般</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>性別</label>
+                        <select id="genderTarget">
+                            <option value="all">すべて</option>
+                            <option value="male">男性</option>
+                            <option value="female">女性</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>ライフスタイル・興味</label>
+                        <textarea id="interests" rows="2" placeholder="例: 健康意識が高い、テクノロジー好き、アクティブなライフスタイル"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>顧客の課題・ニーズ</label>
+                        <textarea id="customerPain" rows="2" placeholder="例: 忙しくて健康管理が大変、運動のモチベーション維持が困難"></textarea>
+                    </div>
+                </div>
+
+                <!-- キャンペーン目標 -->
+                <div class="setup-card">
+                    <h3>🎯 キャンペーン目標</h3>
+                    <div class="form-group">
+                        <label>主要目標</label>
+                        <select id="campaignGoal">
+                            <option value="">選択してください</option>
+                            <option value="awareness">認知度向上</option>
+                            <option value="consideration">検討促進</option>
+                            <option value="conversion">コンバージョン獲得</option>
+                            <option value="retention">顧客維持</option>
+                            <option value="engagement">エンゲージメント向上</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>想定予算（月額）</label>
+                        <select id="budget">
+                            <option value="">選択してください</option>
+                            <option value="low">〜10万円</option>
+                            <option value="medium">10万円〜50万円</option>
+                            <option value="high">50万円〜100万円</option>
+                            <option value="enterprise">100万円以上</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>競合他社</label>
+                        <input type="text" id="competitors" placeholder="例: Apple Watch, Fitbit, Garmin">
+                    </div>
+                </div>
+            </div>
+
+            <div class="setup-actions">
+                <button class="btn-primary large" onclick="proceedToContentInput()">
+                    ✨ コンテンツ入力に進む
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 2: 素材アップロード -->
+        <section class="content-input-section" id="contentInputSection" style="display: none;">
+            <div class="section-header">
+                <h2>Step 2: 素材・コンテンツ入力</h2>
+                <p>既存素材のアップロードや、追加情報を入力してください</p>
+            </div>
+
+            <div class="content-input-grid">
+                <!-- ファイルアップロード -->
+                <div class="upload-card">
+                    <h3>📁 素材アップロード</h3>
+                    <div class="drop-zone" id="adDropZone">
+                        <div class="drop-content">
+                            <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                            </svg>
+                            <h4>既存素材をドロップ</h4>
+                            <p>ロゴ、商品画像、会社資料など</p>
+                            <button class="btn-primary" onclick="document.getElementById('adFileInput').click()">
+                                ファイルを選択
+                            </button>
+                            <input type="file" id="adFileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.jpg,.jpeg,.png,.gif,.mp4,.mov,.txt" style="display: none;">
+                        </div>
+                    </div>
+                    <div class="file-list" id="adFileList"></div>
+                </div>
+
+                <!-- 追加コンテンツ -->
+                <div class="additional-content-card">
+                    <h3>✍️ 追加情報</h3>
+                    <div class="form-group">
+                        <label>ブランドメッセージ・スローガン</label>
+                        <input type="text" id="brandMessage" placeholder="例: あなたの健康を、もっとスマートに">
+                    </div>
+                    <div class="form-group">
+                        <label>使用したいキーワード</label>
+                        <input type="text" id="keywords" placeholder="例: 革新的、高機能、健康管理、ライフスタイル">
+                    </div>
+                    <div class="form-group">
+                        <label>避けたい表現・NGワード</label>
+                        <input type="text" id="ngWords" placeholder="例: 安っぽい、複雑、面倒">
+                    </div>
+                    <div class="form-group">
+                        <label>参考にしたい広告・ブランド</label>
+                        <textarea id="references" rows="2" placeholder="例: Appleのシンプルで洗練されたデザイン、Nikeの情熱的なメッセージング"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>その他の要望・指示</label>
+                        <textarea id="additionalRequests" rows="3" placeholder="例: ポップで親しみやすいトーン、数字を使った具体的な効果、お客様の声を含めたい"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-input-actions">
+                <button class="btn-secondary" onclick="goBackToSetup()">← 戻る</button>
+                <button class="btn-primary large" onclick="proceedToGeneration()">
+                    🚀 AI広告生成を開始
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 3: AI生成中 -->
+        <section class="generation-section" id="generationSection" style="display: none;">
+            <div class="section-header">
+                <h2>🧠 AI広告生成中</h2>
+                <p>あなたの入力情報を基に、プロ品質の広告を生成しています</p>
+            </div>
+
+            <div class="generation-status">
+                <div class="generation-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">初期化中...</div>
+                </div>
+
+                <div class="generation-steps">
+                    <div class="step" id="step1">
+                        <div class="step-icon">📊</div>
+                        <div class="step-text">
+                            <h4>データ分析</h4>
+                            <p>入力情報とターゲット分析</p>
+                        </div>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-icon">✍️</div>
+                        <div class="step-text">
+                            <h4>コピー生成</h4>
+                            <p>魅力的なキャッチコピーと広告文を作成</p>
+                        </div>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-icon">🎨</div>
+                        <div class="step-text">
+                            <h4>デザイン設計</h4>
+                            <p>レイアウトとビジュアル要素を最適化</p>
+                        </div>
+                    </div>
+                    <div class="step" id="step4">
+                        <div class="step-icon">🔄</div>
+                        <div class="step-text">
+                            <h4>バリエーション生成</h4>
+                            <p>A/Bテスト用の複数パターン作成</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="generation-tips">
+                    <h4>💡 豆知識</h4>
+                    <div id="generationTip">効果的な広告は、明確な価値提案と感情的な訴求のバランスが重要です。</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 4: 結果表示 -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="section-header">
+                <h2>✨ 生成結果</h2>
+                <p>AI が生成した広告クリエイティブとバリエーション</p>
+            </div>
+
+            <div class="results-tabs">
+                <button class="tab-btn active" onclick="showResultTab('copywriting')">📝 コピー</button>
+                <button class="tab-btn" onclick="showResultTab('creative')">🎨 クリエイティブ</button>
+                <button class="tab-btn" onclick="showResultTab('variations')">🔄 バリエーション</button>
+                <button class="tab-btn" onclick="showResultTab('analytics')">📊 分析</button>
+            </div>
+
+            <div class="results-content">
+                <!-- 統合された結果表示エリア -->
+                <div id="resultsContainer">
+                    <!-- ここに生成結果が動的に表示される -->
+                </div>
+                
+                <!-- コピーライティング結果 -->
+                <div class="tab-content active" id="copywritingTab" style="display: none;">
+                    <div class="copy-results" id="copyResults">
+                        <!-- AI生成コピーがここに表示される -->
+                    </div>
+                </div>
+
+                <!-- クリエイティブ結果 -->
+                <div class="tab-content" id="creativeTab">
+                    <div class="creative-results" id="creativeResults">
+                        <!-- デザイン案がここに表示される -->
+                    </div>
+                </div>
+
+                <!-- バリエーション -->
+                <div class="tab-content" id="variationsTab">
+                    <div class="variations-results" id="variationsResults">
+                        <!-- 複数パターンがここに表示される -->
+                    </div>
+                </div>
+
+                <!-- 分析・推奨 -->
+                <div class="tab-content" id="analyticsTab">
+                    <div class="analytics-results" id="analyticsResults">
+                        <!-- パフォーマンス予測・改善案 -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-actions">
+                <button class="btn-secondary" onclick="regenerateAds()">🔄 再生成</button>
+                <button class="btn-secondary" onclick="downloadAssets()">📥 素材ダウンロード</button>
+                <button class="btn-primary" onclick="saveToGallery()">💾 ギャラリーに保存</button>
+            </div>
+        </section>
+
+        <!-- 改善・編集セクション -->
+        <section class="improvement-section" id="improvementSection" style="display: none;">
+            <div class="section-header">
+                <h2>🛠️ 広告改善・編集</h2>
+                <p>生成された広告をさらに最適化します</p>
+            </div>
+
+            <div class="improvement-form">
+                <div class="form-group">
+                    <label>改善リクエスト</label>
+                    <textarea id="improvementRequest" rows="4" placeholder="例: もっとインパクトのあるキャッチコピーに変更、若者向けの言葉使いに、価格の訴求を強調"></textarea>
+                </div>
+
+                <div class="quick-improvements">
+                    <h4>🚀 クイック改善</h4>
+                    <div class="improvement-buttons">
+                        <button class="improvement-btn" onclick="quickImprovement('urgent')">⚡ 緊急性を強調</button>
+                        <button class="improvement-btn" onclick="quickImprovement('emotion')">❤️ 感情訴求を強化</button>
+                        <button class="improvement-btn" onclick="quickImprovement('trust')">🏆 信頼性を向上</button>
+                        <button class="improvement-btn" onclick="quickImprovement('price')">💰 価格訴求を強調</button>
+                        <button class="improvement-btn" onclick="quickImprovement('young')">🌟 若者向けに</button>
+                        <button class="improvement-btn" onclick="quickImprovement('professional')">💼 プロフェッショナル</button>
+                    </div>
+                </div>
+
+                <div class="improvement-actions">
+                    <button class="btn-primary" onclick="applyImprovements()">✨ 改善を適用</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- API設定パネル -->
+    <div class="settings-panel" id="adSettingsPanel" style="display: none;">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h3>⚙️ 設定</h3>
+                <button class="btn-icon" onclick="closeSettings()">✕</button>
+            </div>
+            
+            <div class="settings-body">
+                <h4>🔑 API Settings</h4>
+                <div class="setting-group">
+                    <label>Grok API Key:</label>
+                    <div class="api-key-input-group">
+                        <input type="password" id="adApiKey" placeholder="xai-..." class="api-key-input">
+                        <button class="btn-icon" onclick="toggleApiKeyVisibility('adApiKey')" title="表示/非表示">
+                            <span>👁️</span>
+                        </button>
+                    </div>
+                    <small>クリエイティブ生成に使用</small>
+                </div>
+
+                <h4>🎨 生成設定</h4>
+                <div class="setting-group">
+                    <label>クリエイティビティレベル:</label>
+                    <select id="creativityLevel">
+                        <option value="conservative">控えめ（安全）</option>
+                        <option value="moderate" selected>標準</option>
+                        <option value="creative">クリエイティブ</option>
+                        <option value="bold">大胆（実験的）</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label>生成数:</label>
+                    <select id="generationCount">
+                        <option value="3" selected>3パターン</option>
+                        <option value="5">5パターン</option>
+                        <option value="8">8パターン</option>
+                    </select>
+                </div>
+
+                <div class="settings-actions">
+                    <button class="btn-secondary" onclick="clearAdSettings()">🗑️ クリア</button>
+                    <button class="btn-primary" onclick="saveAdSettings()">💾 保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 作品ギャラリーモーダル -->
+    <div class="gallery-modal" id="galleryModal" style="display: none;">
+        <div class="gallery-content">
+            <div class="gallery-header">
+                <h3>📁 作品ギャラリー</h3>
+                <button class="btn-icon" onclick="closeGallery()">✕</button>
+            </div>            <div class="gallery-grid" id="galleryContent">
+                <!-- 保存された作品がここに表示される -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ローディングオーバーレイ -->
+    <div class="loading-overlay" id="adLoadingOverlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner large"></div>
+            <p id="adLoadingMessage">処理中...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="scripts/ad-creator.js?v=20250621"></script>
+    <script src="scripts/ai-service.js?v=20250621"></script>
+</body>
+</html>

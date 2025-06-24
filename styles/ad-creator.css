@@ -1,0 +1,1968 @@
+/* 広告作成支援ツール専用スタイル */
+
+/* CSS変数定義 */
+:root {
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --primary-color: #3b82f6;
+  --transition: all 0.2s ease;
+  --background: #ffffff;
+  --surface: #f8fafc;
+  --surface-dark: #e2e8f0;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border: #e2e8f0;
+}
+
+/* 基本スタイルの改善 */
+body {
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+
+.workspace {
+  background-color: #ffffff !important;
+}
+
+/* ヘッダーも白ベースに */
+header, .app-header {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+header h1 {
+  color: #1e293b !important;
+}
+
+/* ================================
+   セクション固有のスタイル
+   ================================ */
+
+/* プロジェクト設定セクション */
+.project-setup-section {
+  background: #ffffff;
+  color: #1e293b;
+  padding: 3rem 2rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 2rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.project-setup-section .section-header h2,
+.project-setup-section .section-header p {
+  color: #1e293b;
+}
+
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.setup-card {
+  background: #f8fafc;
+  backdrop-filter: none;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  transition: var(--transition);
+}
+
+.setup-card:hover {
+  background: #f1f5f9;
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.setup-card h3 {
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 広告タイプ選択 */
+.ad-type-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .ad-type-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ad-type-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
+.ad-type-btn {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  color: #475569;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 80px;
+}
+
+.ad-type-btn:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+  color: #1e40af;
+  transform: scale(1.05);
+}
+
+.ad-type-btn.selected {
+  background: #3b82f6;
+  border-color: #1d4ed8;
+  color: white;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.ad-type-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.ad-type-btn span {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* フォーム要素 */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  color: white;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: var(--transition);
+  font-weight: 500;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: rgba(60, 60, 60, 0.7);
+  font-weight: 400;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #00f2fe;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.2);
+  color: var(--text-primary);
+}
+
+.form-group select option {
+  background: white;
+  color: var(--text-primary);
+  font-weight: 500;
+  padding: 0.5rem;
+}
+
+/* セットアップアクション */
+.setup-actions {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+/* ================================
+   コンテンツ入力セクション
+   ================================ */
+
+.content-input-section {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  padding: 3rem 2rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 2rem;
+}
+
+.content-input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.upload-card,
+.additional-content-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+}
+
+.upload-card h3,
+.additional-content-card h3 {
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* アップロードエリア */
+.content-input-section .drop-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.5);
+  transition: var(--transition);
+  margin-bottom: 1rem;
+}
+
+.content-input-section .drop-zone:hover,
+.content-input-section .drop-zone.drag-over {
+  border-color: var(--primary-color);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.content-input-section .drop-content h4 {
+  color: var(--text-primary);
+  margin: 1rem 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.content-input-section .drop-content p {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.content-input-section .form-group label {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.content-input-section .form-group input,
+.content-input-section .form-group textarea {
+  background: white;
+  border: 2px solid #e5e7eb;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.content-input-section .form-group input:focus,
+.content-input-section .form-group textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.content-input-section .form-group input::placeholder,
+.content-input-section .form-group textarea::placeholder {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.content-input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 3rem;
+}
+
+/* ================================
+   生成中セクション
+   ================================ */
+
+.generation-section {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.generation-section .section-header h2,
+.generation-section .section-header p {
+  color: #1e293b !important;
+}
+
+.generation-status {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.generation-progress {
+  margin-bottom: 3rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+.progress-text {
+  color: #1e293b !important;
+  font-weight: 600;
+}
+
+.generation-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.step {
+  text-align: center;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  transition: var(--transition);
+}
+
+.step.active {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  border-color: #3b82f6 !important;
+}
+
+.step.completed {
+  background: #dcfce7 !important;
+  color: #059669 !important;
+  border-color: #10b981 !important;
+}
+
+.step-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.step-text h4 {
+  color: inherit !important;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.step-text p {
+  color: #64748b !important;
+  font-size: 0.9rem;
+}
+
+.generation-tips {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.generation-tips h4 {
+  color: #1e40af !important;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.generation-tips div {
+  color: #64748b !important;
+  font-style: italic;
+}
+
+/* ================================
+   結果表示セクション
+   ================================ */
+
+.results-section {
+  background: var(--background);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.results-tabs {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 1rem 2rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.tab-btn:hover {
+  background: rgba(37, 99, 235, 0.05);
+  color: var(--primary-color);
+}
+
+.tab-btn.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.results-content {
+  padding: 2rem;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* コピー結果 */
+.copy-results {
+  display: grid;
+  gap: 2rem;
+}
+
+.copy-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.copy-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.copy-card h4 {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copy-card .copy-text {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.copy-card .copy-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.copy-card .copy-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* クリエイティブ結果 */
+.creative-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.creative-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.creative-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.creative-preview {
+  aspect-ratio: 16/9;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.creative-info {
+  padding: 1.5rem;
+}
+
+.creative-info h4 {
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.creative-info p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.creative-specs {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.creative-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ================================
+   改善セクション
+   ================================ */
+
+.improvement-section {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  padding: 3rem 2rem;
+  border-radius: var(--radius-lg);
+  margin-top: 2rem;
+}
+
+.improvement-form {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.improvement-form .form-group label {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.improvement-form .form-group textarea {
+  background: white;
+  border: 2px solid #e5e7eb;
+  color: var(--text-primary);
+  min-height: 120px;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.improvement-form .form-group textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.improvement-form .form-group textarea::placeholder {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.quick-improvements {
+  margin: 2rem 0;
+}
+
+.quick-improvements h4 {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.improvement-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.improvement-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 1.2rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.improvement-btn:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+}
+
+.improvement-actions {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+/* ================================
+   モーダル・パネル
+   ================================ */
+
+.settings-panel {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 400px;
+  height: 100vh;
+  background: white;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s ease;
+  z-index: 1000;
+}
+
+.settings-panel.open {
+  right: 0;
+}
+
+.settings-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-header {
+  padding: 2rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-header h3 {
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.settings-body {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.settings-body h4 {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.setting-group {
+  margin-bottom: 2rem;
+}
+
+.setting-group label {
+  display: block;
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.setting-group input,
+.setting-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.setting-group input:focus,
+.setting-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.api-key-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.api-key-input {
+  flex: 1;
+}
+
+.setting-group small {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  display: block;
+  margin-top: 0.5rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.settings-actions {
+  padding: 2rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 1rem;
+}
+
+/* ギャラリーモーダル */
+.gallery-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.gallery-content {
+  width: 90vw;
+  max-width: 1200px;
+  height: 80vh;
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.gallery-header {
+  padding: 2rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gallery-header h3 {
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.gallery-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.gallery-empty .empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.gallery-empty h4 {
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.gallery-empty p {
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.gallery-item {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: var(--transition);
+}
+
+.gallery-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.gallery-item h5 {
+  margin-bottom: 0.75rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.gallery-item p {
+  margin-bottom: 1rem;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.4;  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gallery-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #007bff;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-sm:hover {
+  background: #0056b3;
+  border-color: #0056b3;
+}
+
+.btn-sm.btn-danger {
+  background: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-sm.btn-danger:hover {
+  background: #c82333;
+  border-color: #bd2130;
+}
+
+/* ================================
+   ヘッダーとボタンのスタイル
+   ================================ */
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* ボタンの基本スタイル */
+.btn, button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #475569;
+  border: 2px solid #cbd5e1;
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  color: #334155;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+}
+
+/* 小さなボタン */
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* 大きなボタン */
+.btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+}
+
+/* アイコンボタン */
+.btn-icon {
+  padding: 0.75rem;
+  min-width: auto;
+  width: auto;
+  aspect-ratio: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* YouTube特化ボタン */
+.btn-youtube {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  color: white;
+  border: 2px solid #1e40af;
+}
+
+.btn-youtube:hover {
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(30, 64, 175, 0.3);
+}
+
+/* ================================
+   フォーム要素の改善
+   ================================ */
+
+/* 基本のフォーム要素スタイル */
+input, select, textarea {
+  font-family: inherit;
+  border: 2px solid #e1e5e9;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* YouTube設定パネル専用スタイル */
+#youtubeAdSettings input,
+#youtubeAdSettings select,
+#youtubeAdSettings textarea {
+  border: 2px solid #cbd5e1;
+  background: #f8fafc;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+#youtubeAdSettings input:focus,
+#youtubeAdSettings select:focus,
+#youtubeAdSettings textarea:focus {
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+}
+
+#youtubeAdSettings label {
+  color: #1e40af;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+/* YouTubeフォーマット選択ボタンの改善 */
+.format-option {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border: 2px solid #cbd5e1;
+  color: #475569;
+  transition: all 0.3s ease;
+}
+
+.format-option:hover {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #3b82f6;
+  color: #1e40af;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.format-option.selected {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color: #1d4ed8;
+  color: white;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+}
+
+/* 設定パネルのコンテナ改善 */
+.settings-panel {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-left: 3px solid #3b82f6;
+}
+
+.settings-header {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.settings-header h3 {
+  color: #1e40af;
+  font-weight: 700;
+}
+
+/* セクション区切りの改善 */
+.settings-body h4 {
+  color: #1e40af;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+/* 説明文の改善 */
+.setting-group small {
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid #3b82f6;
+  margin-top: 0.75rem;
+}
+
+/* ================================
+   アニメーション
+   ================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1a1a1a;
+    --surface: #2d2d2d;
+    --surface-dark: #404040;
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
+    --text-muted: #808080;
+    --border: #404040;
+  }
+}
+
+/* ================================
+   YouTube広告専用スタイル
+   ================================ */
+
+/* YouTube広告設定カード */
+#youtubeAdSettings {
+  border: 2px solid #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%);
+}
+
+#youtubeAdSettings h3 {
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.youtube-format-info {
+  background: rgba(59, 130, 246, 0.08);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #3b82f6;
+}
+
+.format-details {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.format-info h4 {
+  color: #1e40af;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.format-info ul {
+  list-style: none;
+  padding: 0;
+}
+
+.format-info li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  line-height: 1.5;
+}
+
+.format-info li:last-child {
+  border-bottom: none;
+}
+
+/* YouTube広告結果表示 */
+.youtube-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  color: white;
+  border-radius: var(--radius-lg);
+}
+
+.format-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.youtube-ads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.youtube-ad-card {
+  background: white;
+  border: 2px solid #3b82f6;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+  transition: var(--transition);
+}
+
+.youtube-ad-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 48px rgba(59, 130, 246, 0.15);
+}
+
+.youtube-script-section {
+  margin: 1.5rem 0;
+}
+
+.youtube-script-section h5 {
+  color: #1e40af;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.script-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.script-segment {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+.script-segment.hook {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.script-segment.problem {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.script-segment.solution {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.script-segment.cta {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.time-label {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 60px;
+  text-align: center;
+}
+
+.script-content {
+  flex: 1;
+  line-height: 1.5;
+}
+
+.youtube-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #f5f5f5;
+}
+
+.visual-elements,
+.performance-metrics {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: var(--radius-md);
+}
+
+.visual-elements h5,
+.performance-metrics h5 {
+  color: #1e40af;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+}
+
+.metric {
+  text-align: center;
+  padding: 0.75rem;
+  background: white;
+  border-radius: var(--radius-md);
+  border: 1px solid #e0e0e0;
+}
+
+.metric-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.metric-value {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+/* YouTube戦略セクション */
+.youtube-strategy-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 2px solid #3b82f6;
+  margin-top: 2rem;
+}
+
+.youtube-strategy-section h3 {
+  color: #1e40af;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.strategy-content ul {
+  list-style: none;
+  padding: 0;
+}
+
+.strategy-content li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e0e0e0;
+  line-height: 1.6;
+}
+
+.strategy-content li:last-child {
+  border-bottom: none;
+}
+
+/* ================================
+   モーダルのスタイル
+   ================================ */
+
+.gallery-modal, .settings-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.gallery-content, .settings-content {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.gallery-content {
+  width: 800px;
+  padding: 2rem;
+}
+
+.settings-content {
+  width: 500px;
+  padding: 2rem;
+}
+
+.gallery-header, .settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.gallery-header h3, .settings-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #333;
+}
+
+/* モーダル内のスクロール */
+.gallery-content::-webkit-scrollbar,
+.settings-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.gallery-content::-webkit-scrollbar-track,
+.settings-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.gallery-content::-webkit-scrollbar-thumb,
+.settings-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.gallery-content::-webkit-scrollbar-thumb:hover,
+.settings-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* ================================
+   白ベースの配色オーバーライド
+   ================================ */
+
+/* YouTube設定パネルを白ベースに */
+#youtubeAdSettings {
+  background: #ffffff !important;
+  color: #1e293b !important;
+}
+
+.youtube-format-info {
+  background: #f0f9ff !important;
+  color: #1e293b !important;
+  border: 1px solid #bfdbfe !important;
+}
+
+.format-details {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.format-info li {
+  color: #475569 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* 設定パネル内のテキストを黒ベースに */
+#youtubeAdSettings label,
+#youtubeAdSettings h4,
+#youtubeAdSettings h5,
+#youtubeAdSettings p,
+#youtubeAdSettings li,
+#youtubeAdSettings span {
+  color: #1e293b !important;
+}
+
+/* フォーマット選択ボタンを白ベースに */
+.format-option {
+  background: #ffffff !important;
+  color: #475569 !important;
+  border: 2px solid #e2e8f0 !important;
+}
+
+.format-option:hover {
+  background: #f8fafc !important;
+  color: #1e40af !important;
+  border-color: #3b82f6 !important;
+}
+
+.format-option.selected {
+  background: #3b82f6 !important;
+  color: white !important;
+  border-color: #1d4ed8 !important;
+}
+
+/* プレースホルダーテキストも読みやすく */
+#youtubeAdSettings input::placeholder,
+#youtubeAdSettings textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* 生成中セクションも白ベースに */
+.generation-section {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.generation-section h2,
+.generation-section p {
+  color: #1e293b !important;
+}
+
+.progress-text {
+  color: #1e293b !important;
+  font-weight: 600;
+}
+
+.step {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.step.active {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  border-color: #3b82f6 !important;
+}
+
+.step.completed {
+  background: #dcfce7 !important;
+  color: #059669 !important;
+  border-color: #10b981 !important;
+}
+
+.step-text h4 {
+  color: inherit !important;
+}
+
+.step-text p {
+  color: #64748b !important;
+}
+
+.generation-tips {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.generation-tips h4 {
+  color: #1e40af !important;
+}
+
+.generation-tips div {
+  color: #64748b !important;
+  font-style: italic;
+}
+
+/* ================================
+   テキストを完全に黒に強制修正
+   ================================ */
+
+/* 全てのテキストを黒に */
+* {
+  color: #000000 !important;
+}
+
+/* 入力フィールドのテキストとプレースホルダー */
+input, select, textarea {
+  color: #000000 !important;
+  background: #ffffff !important;
+}
+
+input::placeholder,
+select::placeholder,
+textarea::placeholder {
+  color: #666666 !important;
+}
+
+/* ラベルとヘッダーテキスト */
+label, h1, h2, h3, h4, h5, h6 {
+  color: #000000 !important;
+}
+
+/* 段落とスパンテキスト */
+p, span, div, li {
+  color: #000000 !important;
+}
+
+/* ボタン内のテキスト（選択状態以外） */
+.ad-type-btn {
+  color: #000000 !important;
+}
+
+.ad-type-btn:hover {
+  color: #000000 !important;
+}
+
+/* 選択状態のボタンのみ白テキスト */
+.ad-type-btn.selected {
+  color: #ffffff !important;
+}
+
+.btn-primary {
+  color: #ffffff !important;
+}
+
+.btn-youtube {
+  color: #ffffff !important;
+}
+
+/* フォーム要素の説明文 */
+small {
+  color: #000000 !important;
+}
+
+/* リンクテキスト */
+a {
+  color: #000000 !important;
+}
+
+/* テーブルのテキスト */
+table, th, td {
+  color: #000000 !important;
+}
+
+/* ================================
+   通知スタイル
+   ================================ */
+
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  max-width: 400px;
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  gap: 1rem;
+}
+
+.notification.success {
+  border-left: 4px solid #10b981;
+}
+
+.notification.error {
+  border-left: 4px solid #ef4444;
+}
+
+.notification.warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.notification.info {
+  border-left: 4px solid #3b82f6;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-close:hover {
+  color: #374151;
+}
+
+/* ================================
+   結果表示エリアのスタイル
+   ================================ */
+
+#resultsContainer {
+  padding: 2rem;
+}
+
+.ads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.ad-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: var(--transition);
+}
+
+.ad-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.ad-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ad-header h4 {
+  margin: 0;
+  color: #1e293b;
+}
+
+.ad-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ad-content {
+  color: #475569;
+}
+
+.ad-text {
+  margin-bottom: 1rem;
+}
+
+.ad-text h5 {
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.ad-text p {
+  margin-bottom: 0.5rem;
+}
+
+.ad-text strong {
+  color: #1e293b;
+}
+
+.ad-performance h5 {
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.ad-performance p {
+  margin-bottom: 0.25rem;
+}
+
+/* プレビューモーダル */
+.preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: var(--radius-lg);
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1e293b;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.close-btn:hover {
+  color: #374151;
+}
+
+.preview-details {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.preview-details h4 {
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.ad-content-details {
+  display: grid;
+  gap: 1rem;
+}
+
+.content-item {
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+}
+
+.content-item strong {
+  color: #1e293b;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.content-item p {
+  margin: 0;
+  color: #475569;
+}
+
+/* 特定要素のテキストを確実に黒に */
+.setup-card,
+.setup-card *,
+.project-setup-section,
+.project-setup-section * {
+  color: #000000 !important;
+}
+
+/* YouTube設定パネルのテキスト */
+#youtubeAdSettings,
+#youtubeAdSettings * {
+  color: #000000 !important;
+}
+
+/* 設定パネル全体 */
+.settings-panel,
+.settings-panel *,
+.settings-content,
+.settings-content *,
+.settings-body,
+.settings-body * {
+  color: #000000 !important;
+}
+
+/* ボタン以外の全要素 */
+:not(.btn-primary):not(.btn-youtube):not(.ad-type-btn.selected) {
+  color: #000000 !important;
+}
+
+/* フォームのオプション選択 */
+option {
+  color: #000000 !important;
+  background: #ffffff !important;
+}
