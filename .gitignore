@@ -45,3 +45,7 @@ build/
 *.tmp
 *.temp
 .cache/
+
+# GitHub CLI
+gh_*.tar.gz
+gh_*/
